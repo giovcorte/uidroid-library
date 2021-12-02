@@ -1,4 +1,5 @@
 allprojects {
+    version = "1.0.5"
     repositories {
         google()
         mavenCentral()
@@ -15,14 +16,6 @@ buildscript {
 
     dependencies {
         classpath "com.android.tools.build:gradle:7.0.3"
-    }
-}
-
-subprojects {
-    tasks.withType(JavaCompile).configureEach { task ->
-        task.options.encoding = 'UTF-8'
-        task.sourceCompatibility = JavaVersion.VERSION_1_8
-        task.targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
 

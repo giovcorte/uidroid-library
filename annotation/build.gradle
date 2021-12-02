@@ -13,15 +13,18 @@ java {
 }
 
 afterEvaluate {
-    publishing {
-        publications {
-            // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                // You can then customize attributes of the publication as shown below.
-                groupId = 'com.uidroid.uidroid'
-                artifactId = 'annotation'
-                version = '1.0.4'
-            }
-        }
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    artifacts {
+        archives sourcesJar
+        archives javadocJar
     }
 }

@@ -1,6 +1,5 @@
 plugins {
     id 'java-library'
-    id 'maven-publish'
 }
 
 dependencies {
@@ -12,18 +11,4 @@ dependencies {
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-afterEvaluate {
-    publishing {
-        publications {
-            // Creates a Maven publication called "release".
-            release(MavenPublication) {
-                // You can then customize attributes of the publication as shown below.
-                groupId = 'com.uidroid.uidroid'
-                artifactId = 'processor'
-                version = '1.0.4'
-            }
-        }
-    }
 }
