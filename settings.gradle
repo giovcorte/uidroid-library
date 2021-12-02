@@ -5,8 +5,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url "https://jitpack.io" }
     }
 }
+
 rootProject.name = "UIDroid"
 include ':app'
 include ':processor'
