@@ -1,6 +1,9 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
 }
+
+group='com.github.uidroid.uidroid-library'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
