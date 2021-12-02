@@ -28,7 +28,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
         ViewConfigurationFactoryProcessor configurationFactoryProcessor = new ViewConfigurationFactoryProcessor(processingEnv);
         ViewFactoryProcessor viewFactoryProcessor = new ViewFactoryProcessor(processingEnv);
         ViewCompositeFactoryProcessor compositeFactoryProcessor = new ViewCompositeFactoryProcessor(processingEnv);
-        UIBuilderProcessor uiBuilderProcessor = new UIBuilderProcessor(processingEnv);
+        DatabindingProvidersProcessor databindingProvidersProcessor = new DatabindingProvidersProcessor(processingEnv);
         ViewFieldsInjectorProcessor viewFieldsInjectorProcessor = new ViewFieldsInjectorProcessor(processingEnv);
         ConfigurationBuilderProcessor configurationBuilderProcessor = new ConfigurationBuilderProcessor(processingEnv);
 
@@ -36,7 +36,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
         configurationFactoryProcessor.process(set, roundEnvironment);
         viewFactoryProcessor.process(set, roundEnvironment);
         compositeFactoryProcessor.process(set, roundEnvironment);
-        uiBuilderProcessor.process(set, roundEnvironment);
+        databindingProvidersProcessor.process(set, roundEnvironment);
         viewFieldsInjectorProcessor.process(set, roundEnvironment);
         configurationBuilderProcessor.process(set, roundEnvironment);
 

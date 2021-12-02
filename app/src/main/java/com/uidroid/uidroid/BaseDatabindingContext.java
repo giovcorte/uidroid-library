@@ -17,7 +17,7 @@ public class BaseDatabindingContext extends DatabindingContext {
      * @param imageLoader              IImageLoader instance for loading images.
      * @param clickHandler             IClickHandler instance for handling multiple click on views.
      * @param viewBinderFactory        IViewBinderFactory instance providing view binders.
-     * @param viewConfigurationFactory IViewConfigurationFactory instance, maps objects into configurations.
+     * @param viewConfigurationFactory IViewConfigurationFactory which maps objects into configurations.
      * @param viewCompositeFactory     IViewCompositeFactory instance for creating IViewComposites.
      * @param viewFactory              IViewFactory instance for generating views.
      */

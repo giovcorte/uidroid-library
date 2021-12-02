@@ -9,16 +9,13 @@ import com.uidroid.annotation.UI;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -27,12 +24,12 @@ import javax.lang.model.element.VariableElement;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
-public class UIBuilderProcessor {
+public class DatabindingProvidersProcessor {
 
     private final Filer filer;
     private final Messager messager;
 
-    public UIBuilderProcessor(ProcessingEnvironment processingEnv) {
+    public DatabindingProvidersProcessor(ProcessingEnvironment processingEnv) {
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
     }
@@ -42,8 +39,8 @@ public class UIBuilderProcessor {
             return;
         }
 
-        String databindingClass = null;
-        List<String> resultFields = new ArrayList<>();
+        final List<String> databindingClasses = new ArrayList<>();
+        final List<String> resultFields = new ArrayList<>();
 
         for (Element annotatedElement : roundEnvironment.getElementsAnnotatedWith(UI.class)) {
             if (annotatedElement.getKind() != ElementKind.CLASS) {
@@ -53,8 +50,7 @@ public class UIBuilderProcessor {
             UI item = annotatedElement.getAnnotation(UI.class);
 
             if (item != null) {
-                databindingClass = annotatedElement.asType().toString();
-                break;
+                databindingClasses.add(annotatedElement.asType().toString());
             }
         }
 
@@ -114,11 +110,13 @@ public class UIBuilderProcessor {
             }
         }
 
-        if (databindingClass != null) {
-            try {
-                write(databindingClass, resultFields);
-            } catch (IOException e) {
-                error(e.getMessage());
+        if (!databindingClasses.isEmpty()) {
+            for (String clazz: databindingClasses) {
+                try {
+                    write(clazz, resultFields);
+                } catch (IOException e) {
+                    error(e.getMessage());
+                }
             }
         } else {
             message();
@@ -126,12 +124,13 @@ public class UIBuilderProcessor {
     }
 
     private void write(String databindingClass, List<String> resultFields) throws IOException {
+        String className = databindingClass + "Provider";
         String packageName;
-        int lastDot = "com.uidroid.uidroid.UIBuilder".lastIndexOf('.');
-        packageName = "com.uidroid.uidroid.UIBuilder".substring(0, lastDot);
+        int lastDot = className.lastIndexOf('.');
+        packageName = className.substring(0, lastDot);
 
         JavaFileObject builderFile = filer
-                .createSourceFile("com.uidroid.uidroid.UIBuilder");
+                .createSourceFile(className);
 
         try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
             out.print("package ");
@@ -156,23 +155,24 @@ public class UIBuilderProcessor {
             }
             out.print("\n");
 
-            out.print("public final class UIBuilder { \n\n");
+            out.print("public final class " + getSimpleName(className) + " { \n\n");
             for (String s: resultFields) {
                 out.print("  private " + getSimpleName(s) + " " + firstLowerCased(getSimpleName(s)) + "; \n");
             }
             out.print("  private IImageLoader imageLoader; \n\n");
-            out.print("  public UIBuilder(Context context) { \n");
+            out.print("  public " + getSimpleName(getSimpleName(className)) + "(Context context) { \n");
             out.print("    this.imageLoader = new ImageLoader(context); \n");
             out.print("  } \n");
             out.print("\n");
             for (String s: resultFields) {
-                out.print("  public UIBuilder " + firstLowerCased(getSimpleName(s)) + "(" + getSimpleName(s) + " " + firstLowerCased(getSimpleName(s)) + ") { \n");
+                out.print("  public " + getSimpleName(className) + " " + firstLowerCased(getSimpleName(s))
+                        + "(" + getSimpleName(s) + " " + firstLowerCased(getSimpleName(s)) + ") { \n");
                 out.print("    this." + firstLowerCased(getSimpleName(s)) + " = " + firstLowerCased(getSimpleName(s)) + "; \n");
                 out.print("    return this; \n");
                 out.print("  } \n");
             }
 
-            out.print("  public UIBuilder imageLoader(IImageLoader imageLoader) { \n");
+            out.print("  public " + getSimpleName(className) + " imageLoader(IImageLoader imageLoader) { \n");
             out.print("    this.imageLoader = imageLoader; \n");
             out.print("    return this; \n");
             out.print("  } \n");

@@ -38,6 +38,10 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
         void onBottomScrolled();
     }
 
+    public RecyclerViewBinder() {
+        super();
+    }
+
     @Override
     public void doBind(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         handleFilter(view, configuration, databindingContext);
