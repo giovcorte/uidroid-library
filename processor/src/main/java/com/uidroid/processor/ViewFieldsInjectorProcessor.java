@@ -100,7 +100,7 @@ public class ViewFieldsInjectorProcessor {
                 error(e.getMessage());
             }
         } else {
-            message("You must annotate an object with @AppPackage(<rootPackage>) to generate this helper class.");
+            message("You must annotate an object with @AppPackage(root.package.name) to generate this helper class.");
         }
 
     }
