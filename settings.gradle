@@ -9,7 +9,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "UIDroid"
+rootProject.name = "uidroid"
 include ':app'
 include ':processor'
 include ':annotation'

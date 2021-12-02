@@ -3,6 +3,12 @@ plugins {
     id 'maven-publish'
 }
 
+group = 'com.uidroid.uidroid'
+
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     testImplementation 'junit:junit:4.13.2'
 }
@@ -12,19 +18,17 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-afterEvaluate {
-    task sourcesJar(type: Jar, dependsOn: classes) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
-    }
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
 
-    task javadocJar(type: Jar, dependsOn: javadoc) {
-        classifier = 'javadoc'
-        from javadoc.destinationDir
-    }
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
 
-    artifacts {
-        archives sourcesJar
-        archives javadocJar
-    }
+artifacts {
+    archives sourcesJar
+    archives javadocJar
 }
