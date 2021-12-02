@@ -21,8 +21,8 @@ buildscript {
 subprojects {
     tasks.withType(JavaCompile).configureEach { task ->
         task.options.encoding = 'UTF-8'
-        task.sourceCompatibility = JavaVersion.VERSION_1_8
-        task.targetCompatibility = JavaVersion.VERSION_1_8
+        task.sourceCompatibility = JavaVersion.VERSION_11
+        task.targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
