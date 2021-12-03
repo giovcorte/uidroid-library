@@ -117,9 +117,11 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      */
     @SuppressWarnings("unused")
     public void removeItem(int position) {
-        configuration.getChildrenConfiguration(filter).remove(position);
+        if (position >= 0 && position < configuration.getChildrenConfiguration(filter).size()) {
+            configuration.getChildrenConfiguration(filter).remove(position);
 
-        databindingContext.runOnUIThread(() -> notifyItemRemoved(position));
+            notifyItemRemoved(position);
+        }
     }
 
     /**
