@@ -17,6 +17,7 @@ import com.uidroid.uidroid.loader.worker.ImageUrlWorker;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,7 +31,7 @@ public final class ImageLoader implements IImageLoader {
     private final Handler handler;
 
     private final ImageCache cache;
-    private final HashMap<String, FutureTask<Void>> tasks = new HashMap<>();
+    private final Map<String, FutureTask<Void>> tasks = new HashMap<>();
 
     public interface ImageCallback {
         void onSuccess(Bitmap bitmap, ImageView imageView, ImageRequest imageRequest);
