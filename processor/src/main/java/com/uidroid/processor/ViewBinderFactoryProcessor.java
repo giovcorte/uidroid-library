@@ -12,18 +12,15 @@ import com.uidroid.annotation.UI;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -48,8 +45,8 @@ public class ViewBinderFactoryProcessor {
             return;
         }
 
-        final Map<String, BinderInfo> result = new HashMap<>();
-        final List<String> resultFields = new ArrayList<>();
+        final Map<String, BinderInfo> result = getDefaultBinders(); // binder class mapped to his info
+        final List<String> resultFields = new ArrayList<>(); // constructor parameters
 
         for (Element annotatedElement : roundEnvironment.getElementsAnnotatedWith(UI.BinderFor.class)) {
             if (annotatedElement.getKind() != ElementKind.CLASS) {
@@ -154,6 +151,39 @@ public class ViewBinderFactoryProcessor {
         }
     }
 
+    private Map<String, BinderInfo> getDefaultBinders() {
+        final String UIDroidBindersPackage = "com.uidroid.uidroid.binder";
+        final String androidWidgetPackage = "android.widget";
+
+        final Map<String, BinderInfo> binderInfoMap = new LinkedHashMap<>();
+
+        binderInfoMap.put(UIDroidBindersPackage + ".CheckBoxBinder",
+                new BinderInfo().putClass(UIDroidBindersPackage + ".CheckBoxBinder")
+                        .putClass(androidWidgetPackage + ".CheckBox"));
+
+        binderInfoMap.put(UIDroidBindersPackage + ".EditTextViewBinder",
+                new BinderInfo().putClass(UIDroidBindersPackage + ".EditTextViewBinder")
+                        .putClass(androidWidgetPackage + ".EditText"));
+
+        binderInfoMap.put(UIDroidBindersPackage + ".TextViewBinder",
+                new BinderInfo().putClass(UIDroidBindersPackage + ".TextViewBinder")
+                        .putClass(androidWidgetPackage + ".TextView"));
+
+        binderInfoMap.put(UIDroidBindersPackage + ".ImageViewBinder",
+                new BinderInfo().putClass(UIDroidBindersPackage + ".ImageViewBinder")
+                        .putClass(androidWidgetPackage + ".ImageView"));
+
+        binderInfoMap.put(UIDroidBindersPackage + ".ViewPagerBinder",
+                new BinderInfo().putClass(UIDroidBindersPackage + ".ViewPagerBinder")
+                        .putClass("androidx.viewpager.widget.ViewPager"));
+
+        binderInfoMap.put(UIDroidBindersPackage + ".RecyclerViewBinder",
+                new BinderInfo().putClass(UIDroidBindersPackage + ".RecyclerViewBinder")
+                        .putClass("androidx.recyclerview.widget.RecyclerView"));
+
+        return binderInfoMap;
+    }
+
     private void write(Map<String, BinderInfo> result, List<String> resultFields) throws IOException {
         String packageName;
         int lastDot = "com.uidroid.uidroid.factory.ViewBinderFactory".lastIndexOf('.');
@@ -194,7 +224,7 @@ public class ViewBinderFactoryProcessor {
             out.print("  public IViewBinder build(String value) { \n");
             out.print("    switch(value) { \n");
             result.forEach((type, value) -> {
-                for (String clazz: value.classNames) {
+                for (String clazz: value.viewClassNames) {
                     out.print("      case " + getCodeString(getClearClassName(clazz)) + ": \n");
                 }
                 out.print("        return new " + getSimpleName(type) + "(" + getParams(value.constructorParameters) + "); \n");
@@ -231,7 +261,7 @@ public class ViewBinderFactoryProcessor {
 
     public static class BinderInfo {
 
-        public List<String> classNames = new ArrayList<>();
+        public List<String> viewClassNames = new ArrayList<>();
         public List<String> constructorParameters = new ArrayList<>();
 
         public BinderInfo() {
@@ -239,9 +269,16 @@ public class ViewBinderFactoryProcessor {
         }
 
         public void addClass(String clazz) {
-            if (!classNames.contains(clazz)) {
-                classNames.add(clazz);
+            if (!viewClassNames.contains(clazz)) {
+                viewClassNames.add(clazz);
             }
+        }
+
+        public BinderInfo putClass(String clazz) {
+            if (!viewClassNames.contains(clazz)) {
+                viewClassNames.add(clazz);
+            }
+            return this;
         }
 
     }

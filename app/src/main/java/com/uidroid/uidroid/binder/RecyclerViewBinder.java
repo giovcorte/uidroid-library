@@ -12,7 +12,6 @@ import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.adapter.GenericRecyclerViewAdapter;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
-@UI.BinderFor(view = RecyclerView.class)
 public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBinder.IRecyclerViewBinderListener> extends ListenerViewBinder<V, L> {
 
     public static class Type {

@@ -6,7 +6,6 @@ import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
-@UI.BinderFor(view = CheckBox.class)
 public class CheckBoxBinder extends ListenerViewBinder<CheckBox, CheckBoxBinder.ICheckBoxListener> {
 
     public static final String CHECKBOX_SELECTED = "checkboxSelected";

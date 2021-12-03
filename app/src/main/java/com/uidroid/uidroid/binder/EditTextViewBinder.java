@@ -12,7 +12,6 @@ import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
-@UI.BinderFor(view = EditText.class)
 public class EditTextViewBinder extends TextViewBinder<EditText> {
 
     public interface EditTextListener {

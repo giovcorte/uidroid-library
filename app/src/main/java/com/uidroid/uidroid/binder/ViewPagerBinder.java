@@ -7,7 +7,6 @@ import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.adapter.GenericPagerAdapter;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
-@UI.BinderFor(view = ViewPager.class)
 public class ViewPagerBinder<V extends ViewPager> extends ViewBinder<V> {
 
     public static final String VIEW_PAGER_LIST = "viewPagerList";

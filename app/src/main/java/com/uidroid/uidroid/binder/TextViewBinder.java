@@ -10,7 +10,6 @@ import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.model.TextViewElement;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
-@UI.BinderFor(view = TextView.class)
 public class TextViewBinder<V extends TextView> extends ListenerViewBinder<V, EditTextViewBinder.EditTextListener> {
 
     @SuppressWarnings("unused")
