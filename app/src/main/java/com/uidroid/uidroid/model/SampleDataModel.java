@@ -15,7 +15,7 @@ public class SampleDataModel {
     public String text;
 
     @UI.ConfigurationsList
-    public List<ImageViewElement> images;
+    public List<String> images;
 
     @UI.FieldConfiguration(view = TextView.class, params = {@UI.StableParam(key = "font", value = "bbbb")})
     public String textFormatted;

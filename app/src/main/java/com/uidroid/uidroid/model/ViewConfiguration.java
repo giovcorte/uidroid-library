@@ -215,9 +215,17 @@ public final class ViewConfiguration {
      * Helper methods for accessing simple data with cast safety
      */
 
-    private final Map<String, Object> params;
+    private Map<String, Object> params;
 
     public synchronized void putParam(String key, Object param) {
+        if (param == null) {
+            return;
+        }
+
+        if (params == null) {
+            this.params = new ConcurrentHashMap<>(new LinkedHashMap<>());
+        }
+
         this.params.put(key, param);
     }
 

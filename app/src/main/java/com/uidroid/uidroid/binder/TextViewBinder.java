@@ -5,9 +5,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.TextView;
 
-import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
-import com.uidroid.uidroid.model.TextViewElement;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
 public class TextViewBinder<V extends TextView> extends ListenerViewBinder<V, EditTextViewBinder.EditTextListener> {
