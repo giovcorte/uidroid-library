@@ -19,10 +19,6 @@ public class ImageViewBinder<V extends ImageView> extends ViewBinder<V> {
     public static final String PLACE_HOLDER = "placeHolder";
     public static final String FILE = "file";
 
-    public ImageViewBinder() {
-        super();
-    }
-
     @Override
     public void doBind(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         handleColor(view, configuration);
@@ -55,7 +51,7 @@ public class ImageViewBinder<V extends ImageView> extends ViewBinder<V> {
         }
 
         if (source != null) {
-            databindingContext.getImageLoader().load(view, request.build());
+            databindingContext.getImageLoader().load(view, request.source(source).build());
         } else {
             view.setVisibility(View.GONE);
         }

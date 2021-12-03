@@ -45,6 +45,10 @@ public final class ImageLoader implements IImageLoader {
     }
 
     public void load(ImageView view, ImageRequest request) {
+        if (request.getSource() == null) {
+            return;
+        }
+
         view.setTag(request.getSource());
 
         Bitmap bitmap = cache.get(request.getSource());
@@ -83,6 +87,7 @@ public final class ImageLoader implements IImageLoader {
         final FutureTask<Void> worker = new FutureTask<>(
                 ImageWorkerFactory.getWorker(view, request, callback, cache)
         );
+
         tasks.put(request.getSource(), worker);
         executorService.submit(worker);
     }
