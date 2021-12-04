@@ -54,7 +54,7 @@ public abstract class ViewBinder<V extends View> implements IViewBinder {
                                    ViewConfiguration.IViewConfigurationFilter filter) {
         for (int i = 0; i < viewGroup.getChildCount(); i++) {
             databindingContext.unbindView(viewGroup.getChildAt(i),
-                    configuration.getChildrenConfiguration(filter).get(i));
+                    configuration.getChildrenConfigurations(filter).get(i));
         }
     }
 

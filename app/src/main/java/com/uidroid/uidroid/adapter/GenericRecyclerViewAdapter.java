@@ -38,7 +38,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
     @NonNull
     @Override
     public GenericViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        final ViewConfiguration holderConfiguration = configuration.getChildrenConfiguration(filter).get(viewType);
+        final ViewConfiguration holderConfiguration = configuration.getChildrenConfigurations(filter).get(viewType);
         final View view = databindingContext.buildView(parent.getContext(), holderConfiguration.getViewType());
 
         return new GenericViewHolder(view, holderConfiguration);
@@ -76,7 +76,8 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      */
     public void addItem(String key, ViewConfiguration childConfiguration) {
         configuration.addChildConfiguration(key, childConfiguration);
-        databindingContext.runOnUIThread(() -> notifyItemInserted(configuration.getChildrenConfiguration(filter).size()));
+        databindingContext.runOnUIThread(() ->
+                notifyItemInserted(configuration.getChildrenConfigurations(filter).size()));
     }
 
     /**
@@ -101,7 +102,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      */
     @SuppressWarnings("unused")
     public void removeItem(String key) {
-        final int position = itemPositionByKey(key) - 1;
+        final int position = itemPositionByKey(key);
 
         if (position != -1) {
             configuration.removeChildByFilter((key1, model) -> key1.equals(key));
@@ -117,8 +118,8 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      */
     @SuppressWarnings("unused")
     public void removeItem(int position) {
-        if (position >= 0 && position < configuration.getChildrenConfiguration(filter).size()) {
-            configuration.getChildrenConfiguration(filter).remove(position);
+        if (position >= 0 && position < configuration.getChildrenConfigurations(filter).size()) {
+            configuration.removeChildByPosition(position, filter);
 
             notifyItemRemoved(position);
         }
@@ -135,15 +136,13 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
         int position = 0;
         boolean found = false;
 
-        for (ViewConfiguration configuration: configuration.getChildrenConfigurations()) {
-            if (filter.match(configuration.getKey(), configuration)) {
-                position++;
-            }
-
+        for (ViewConfiguration configuration: configuration.getChildrenConfigurations(filter)) {
             if (configuration.getKey().equals(key)) {
                 found = true;
                 break;
             }
+
+            position++;
         }
 
         return found ? position : -1;
@@ -151,7 +150,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
 
     @Override
     public int getItemCount() {
-        return configuration.getChildrenConfiguration(filter).size();
+        return configuration.getChildrenConfigurations(filter).size();
     }
 
     @Override
@@ -166,7 +165,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      */
     @SuppressWarnings("unused")
     public List<ViewConfiguration> getItems() {
-        return configuration.getChildrenConfiguration(filter);
+        return configuration.getChildrenConfigurations(filter);
     }
 
     /**
@@ -176,7 +175,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      * @return the IViewConfiguration at the given index.
      */
     public ViewConfiguration getItem(int index) {
-        return configuration.getChildrenConfiguration(filter).get(index);
+        return configuration.getChildrenConfigurations(filter).get(index);
     }
 
     /**
@@ -186,7 +185,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      */
     public void setFilter(ViewConfiguration.IViewConfigurationFilter filter) {
         this.filter = filter;
-        notifyItemRangeChanged(0, configuration.getChildrenConfiguration(filter).size());
+        notifyItemRangeChanged(0, configuration.getChildrenConfigurations(filter).size());
     }
 
 }

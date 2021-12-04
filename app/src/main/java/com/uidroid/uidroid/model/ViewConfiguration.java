@@ -151,10 +151,38 @@ public final class ViewConfiguration {
     }
 
     public synchronized void removeChildByFilter(IViewConfigurationFilter filter) {
-        for (ViewConfiguration configuration: children) {
-            if (filter.match(configuration.getKey(), configuration)) {
-                children.remove(configuration);
-                break;
+        if (filter != null) {
+            for (ViewConfiguration configuration : children) {
+                if (filter.match(configuration.getKey(), configuration)) {
+                    children.remove(configuration);
+                    break;
+                }
+            }
+        }
+    }
+
+    public synchronized void removeChildByPosition(int position, IViewConfigurationFilter filter) {
+        int i = 0;
+
+        if (filter != null) {
+            for (ViewConfiguration configuration : children) {
+                if (filter.match(configuration.getKey(), configuration)) {
+                    if (i == position) {
+                        children.remove(configuration);
+                        break;
+                    }
+
+                    i++;
+                }
+            }
+        } else {
+            for (ViewConfiguration configuration : children) {
+                if (i == position) {
+                    children.remove(configuration);
+                    break;
+                }
+
+                i++;
             }
         }
     }
@@ -167,7 +195,7 @@ public final class ViewConfiguration {
         this.action = action;
     }
 
-    public synchronized void addChildrenConfiguration(String key, List<ViewConfiguration> list) {
+    public synchronized void addChildrenConfigurations(String key, List<ViewConfiguration> list) {
         for (ViewConfiguration configuration : list) {
             if (configuration == null) {
                 continue;
@@ -195,7 +223,7 @@ public final class ViewConfiguration {
         return results;
     }
 
-    public List<ViewConfiguration> getChildrenConfiguration(IViewConfigurationFilter filter) {
+    public List<ViewConfiguration> getChildrenConfigurations(IViewConfigurationFilter filter) {
         if (filter == null) {
             return children;
         }

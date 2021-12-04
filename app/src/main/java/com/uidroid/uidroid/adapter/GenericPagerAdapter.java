@@ -25,7 +25,7 @@ public class GenericPagerAdapter extends PagerAdapter {
     }
 
     public int getCount() {
-        return configuration.getChildrenConfiguration(filter).size();
+        return configuration.getChildrenConfigurations(filter).size();
     }
 
     public boolean isViewFromObject(@NonNull View view, @NonNull Object object) {
@@ -34,12 +34,12 @@ public class GenericPagerAdapter extends PagerAdapter {
 
     @NonNull
     public Object instantiateItem(@NonNull ViewGroup container, int position) {
-        final ViewConfiguration model = configuration.getChildrenConfiguration(filter).get(position);
+        final ViewConfiguration model = configuration.getChildrenConfigurations(filter).get(position);
         final View view = databindingContext.buildView(container.getContext(), model.getViewType());
 
         container.addView(view);
         databindingContext.bindViewToConfiguration(view,
-                configuration.getChildrenConfiguration(filter).get(position));
+                configuration.getChildrenConfigurations(filter).get(position));
 
         return view;
     }
