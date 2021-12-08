@@ -7,11 +7,11 @@ import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SnapHelper;
 
-import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.adapter.GenericRecyclerViewAdapter;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
+@SuppressWarnings("unused")
 public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBinder.IRecyclerViewBinderListener> extends ListenerViewBinder<V, L> {
 
     public static class Type {
@@ -21,12 +21,11 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
         public final static String HORIZONTAL_SNAPPING = "recyclerViewHorizontalSnapping";
     }
 
+    public final static String RECYCLER_VIEW_POSITION = "recyclerViewPosition";
     public final static String RECYCLER_VIEW_TYPE = "recyclerViewType";
     public final static String RECYCLER_VIEW_ITEM_SPAN_SIZE = "recyclerViewItemSpanSize";
     public final static String RECYCLER_VIEW_COLUMNS = "recyclerViewColumns";
     public final static String RECYCLER_VIEW_LIST = "recyclerViewList";
-
-    protected int currentPosition = 0;
 
     protected ViewConfiguration.IViewConfigurationFilter filter;
 
@@ -35,10 +34,6 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
 
     public interface IRecyclerViewBinderListener {
         void onBottomScrolled();
-    }
-
-    public RecyclerViewBinder() {
-        super();
     }
 
     @Override
@@ -51,7 +46,7 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
 
         view.setLayoutManager(layoutManager);
         view.setAdapter(adapter);
-        view.scrollToPosition(currentPosition);
+        view.scrollToPosition(configuration.getIntegerParam(RECYCLER_VIEW_POSITION, 0));
     }
 
     protected void handleType(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
@@ -74,7 +69,6 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
         }
     }
 
-    @SuppressWarnings("unused")
     protected void handleGrid(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         layoutManager = new GridLayoutManager(view.getContext(),
                 configuration.getIntegerParam(RECYCLER_VIEW_COLUMNS, 1));
@@ -87,17 +81,14 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
         });
     }
 
-    @SuppressWarnings("unused")
     protected void handleVertical(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         layoutManager = new LinearLayoutManager(view.getContext());
     }
 
-    @SuppressWarnings("unused")
     protected void handleHorizontal(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         layoutManager = new LinearLayoutManager(view.getContext(), LinearLayoutManager.HORIZONTAL, false);
     }
 
-    @SuppressWarnings("unused")
     protected void handleHorizontalSnapping(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         layoutManager = new LinearLayoutManager(view.getContext(), LinearLayoutManager.HORIZONTAL, false);
 
@@ -105,52 +96,37 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
         snapHelper.attachToRecyclerView(view);
     }
 
-    @SuppressWarnings("unused")
     protected void handleFilter(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
-        filter = (key, configuration1) -> key.equals(RECYCLER_VIEW_LIST);
+        filter = configuration1 -> configuration1.key().equals(RECYCLER_VIEW_LIST);
     }
 
-    @SuppressWarnings("unused")
     protected void handleAdapter(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         adapter = new GenericRecyclerViewAdapter(databindingContext, configuration, filter);
     }
 
-    @SuppressWarnings("unused")
     protected void handleScrollListener(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         view.addOnScrollListener(new RecyclerViewConfiguratorScrollListener());
     }
 
-    @SuppressWarnings("unused")
     protected void handleItemAnimator(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         view.setItemAnimator(null);
     }
 
     @Override
     public void doUnbind(RecyclerView view, ViewConfiguration configuration, DatabindingContext databindingContext) {
-        if (adapter != null && layoutManager != null) {
-            currentPosition = layoutManager.findFirstVisibleItemPosition();
+        if (layoutManager != null) {
+            configuration.putParam(RECYCLER_VIEW_POSITION, layoutManager.findFirstVisibleItemPosition());
             layoutManager = null;
             adapter = null;
 
             view.setOnScrollChangeListener(null);
         }
-
-        unbindViewGroup(databindingContext, view, configuration, filter);
     }
 
-    @Override
-    public void doRemove(DatabindingContext databindingContext, ViewConfiguration configuration) {
-        currentPosition = 0;
-        layoutManager = null;
-        adapter = null;
-    }
-
-    @SuppressWarnings("unused")
     public GenericRecyclerViewAdapter getAdapter() {
         return adapter;
     }
 
-    @SuppressWarnings("unused")
     public void setFilter(ViewConfiguration.IViewConfigurationFilter filter) {
         this.filter = filter;
         adapter.setFilter(filter);
@@ -168,7 +144,6 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
             handleOnScrolled(recyclerView, dx, dy);
         }
 
-        @SuppressWarnings("unused")
         protected void handleOnScrolled(RecyclerView recyclerView, int dx, int dy) {
             if (layoutManager != null) {
                 final int totalItemCount = layoutManager.getItemCount();

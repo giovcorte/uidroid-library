@@ -1,7 +1,5 @@
 package com.uidroid.processor;
 
-import static com.uidroid.processor.Utils.capitalize;
-
 import com.uidroid.annotation.UI;
 
 import java.io.IOException;
@@ -58,7 +56,9 @@ public class ConfigurationBuilderProcessor {
             if (annotatedElement.getKind() != ElementKind.CLASS) {
                 continue;
             }
+
             String clazz = annotatedElement.asType().toString();
+
             if (!result.containsKey(clazz)) {
                 result.put(clazz, new HashMap<>());
             }
@@ -70,8 +70,10 @@ public class ConfigurationBuilderProcessor {
             if (annotatedElement.getKind() != ElementKind.FIELD) {
                 continue;
             }
+
             String className = ((TypeElement) annotatedElement.getEnclosingElement()).getQualifiedName().toString();
             VariableElement variable = ((VariableElement) annotatedElement);
+
             result.get(className).put(variable.getSimpleName().toString(), variable.asType().toString());
         }
     }

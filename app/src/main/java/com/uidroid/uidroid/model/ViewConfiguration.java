@@ -1,7 +1,10 @@
 package com.uidroid.uidroid.model;
 
+import static com.uidroid.uidroid.DatabindingContext.COMMON_BINDER;
+
 import androidx.annotation.NonNull;
 
+import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.handler.IViewAction;
 
 import java.util.ArrayList;
@@ -9,6 +12,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -16,14 +20,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * and binders are generated at runtime through a two-round visitor -> factory pattern.
  */
 @SuppressWarnings("unused")
-public final class ViewConfiguration {
+public class ViewConfiguration {
 
     /**
      * Interface for define a filter based on key - configuration pair child of the
      * ViewConfiguration.
      */
     public interface IViewConfigurationFilter {
-        boolean match(String key, ViewConfiguration configuration);
+        boolean match(ViewConfiguration configuration);
     }
 
     private final String viewId;
@@ -45,13 +49,9 @@ public final class ViewConfiguration {
     public ViewConfiguration(String id,
                              String viewType,
                              String binderType) {
-        if (id == null) {
-            throw new RuntimeException("ViewConfiguration id cannot be null");
-        }
-
-        this.binderType = binderType;
+        this.viewId = validateId(id);
+        this.binderType = validateBinder(binderType);
         this.viewType = viewType;
-        this.viewId = id;
         this.children = Collections.synchronizedList(new ArrayList<>());
         this.params = new ConcurrentHashMap<>(new LinkedHashMap<>());
     }
@@ -75,55 +75,100 @@ public final class ViewConfiguration {
                               List<ViewConfiguration> children,
                               IViewAction action,
                               Map<String, Object> params) {
-        if (id == null) {
-            throw new RuntimeException("ViewConfiguration id cannot be null");
-        }
-
-        this.binderType = binderType;
+        this.viewId = validateId(id);
+        this.binderType = validateBinder(binderType);
         this.viewType = viewType;
-        this.viewId = id;
         this.parent = parent;
         this.children = children;
         this.action = action;
         this.params = params;
     }
 
+    /**
+     * Creates a new ViewConfiguration instance equals to this, but with the new id.
+     *
+     * @param id String new id.
+     * @return ViewConfiguration instance.
+     */
     public ViewConfiguration cloneWithId(String id) {
         return new ViewConfiguration(id, viewType, binderType, viewKey, parent, children, action, params);
     }
 
+    /**
+     * Returns the id for this configuration. The constructors makes impossible to instantiate a
+     * ViewConfiguration object with a null id.
+     *
+     * @return String id.
+     */
     @NonNull
-    public String getId() {
+    public String id() {
         return viewId;
     }
 
-    public String getViewType() {
+    /**
+     * Returns the class type representing the view to generate and bind to this configuration.
+     *
+     * @return String view type.
+     */
+    public String view() {
         return viewType;
     }
 
-    public String getBinderType() {
+    /**
+     * Returns a specific class type for the desired binder class. If not specified, the fallback
+     * will be on the view type value.
+     *
+     * @return String for the binder class type.
+     */
+    public String binder() {
         return binderType;
     }
 
-    public String getKey() {
+    /**
+     * Returns the key associated to this configuration. If null this is a root configuration.
+     *
+     * @return String key.
+     */
+    public String key() {
         return viewKey;
     }
 
+    /**
+     * Returns the father of this configuration in the view tree.
+     *
+     * @return ViewConfiguration father.
+     */
     public ViewConfiguration getParentConfiguration() {
         return this.parent;
     }
 
+    /**
+     * Checks if this configuration has a parent in the view tree.
+     *
+     * @return boolean.
+     */
     public boolean hasParent() {
         return this.parent != null;
     }
 
+    /**
+     * Returns all the children of this configuration.
+     *
+     * @return List of the children.
+     */
     public List<ViewConfiguration> getChildrenConfigurations() {
         return children;
     }
 
-    public boolean hasChild(String key) {
+    /**
+     * Checks if this configuration has one or more child with the specified key .
+     *
+     * @param key String representing the child searched.
+     * @return boolean true if one match found, false otherwise.
+     */
+    public synchronized boolean hasChild(String key) {
         for (ViewConfiguration configuration: children) {
-            if (configuration.getKey().equals(key)) {
+            if (configuration.key().equals(key)) {
                 return true;
             }
         }
@@ -131,18 +176,64 @@ public final class ViewConfiguration {
         return false;
     }
 
+    /**
+     * Checks if this configuration has multiple children with a specific key.
+     *
+     * @param key String key.
+     * @return boolean.
+     */
+    public synchronized boolean hasChildrenList(String key) {
+        int count = 0;
+
+        for (ViewConfiguration configuration: children) {
+            if (configuration.key().equals(key)) {
+                count++;
+            }
+        }
+
+        return count > 1;
+    }
+
+    /**
+     * Returns the first available child with the given key, id any.
+     *
+     * @param key String representing the child.
+     * @return ViewConfiguration child for the specified key.
+     */
     public ViewConfiguration getChildConfigurationByKey(String key) {
         for (ViewConfiguration configuration: children) {
-            if (configuration.getKey().equals(key)) {
+            if (configuration.key().equals(key)) {
                 return configuration;
             }
         }
 
-        return null;
+        return DatabindingContext.emptyConfiguration;
     }
 
+    /**
+     * Returns the available child with the given id, if any.
+     *
+     * @param id String representing the child.
+     * @return ViewConfiguration child for the specified key.
+     */
+    public ViewConfiguration getChildConfigurationById(String id) {
+        for (ViewConfiguration configuration: children) {
+            if (configuration.id().equals(id)) {
+                return configuration;
+            }
+        }
+
+        return DatabindingContext.emptyConfiguration;
+    }
+
+    /**
+     * Adds a single ViewConfiguration object as a child of this configuration.
+     *
+     * @param key String key for identify the child.
+     * @param configuration ViewConfiguration child.
+     */
     public synchronized void addChildConfiguration(String key, ViewConfiguration configuration) {
-        if (configuration != null) {
+        if (key != null && configuration != null) {
             configuration.parent = this;
             configuration.viewKey = key;
 
@@ -150,10 +241,15 @@ public final class ViewConfiguration {
         }
     }
 
+    /**
+     * Removes the ViewConfiguration child which match the provided filter.
+     *
+     * @param filter IViewConfigurationFilter to filter the children.
+     */
     public synchronized void removeChildByFilter(IViewConfigurationFilter filter) {
         if (filter != null) {
             for (ViewConfiguration configuration : children) {
-                if (filter.match(configuration.getKey(), configuration)) {
+                if (filter.match(configuration)) {
                     children.remove(configuration);
                     break;
                 }
@@ -161,12 +257,19 @@ public final class ViewConfiguration {
         }
     }
 
+    /**
+     * Removes the ViewConfiguration child at the provided position, in the sub-collection
+     * identified by the provided filter.
+     *
+     * @param position int position of the child to remove.
+     * @param filter IViewConfigurationFilter to filter the children.
+     */
     public synchronized void removeChildByPosition(int position, IViewConfigurationFilter filter) {
         int i = 0;
 
         if (filter != null) {
             for (ViewConfiguration configuration : children) {
-                if (filter.match(configuration.getKey(), configuration)) {
+                if (filter.match(configuration)) {
                     if (i == position) {
                         children.remove(configuration);
                         break;
@@ -187,15 +290,36 @@ public final class ViewConfiguration {
         }
     }
 
+    /**
+     * Returns the action to perform when the associated view is clicked.
+     *
+     * @return IViewAction instance.
+     */
     public IViewAction getAction() {
         return action;
     }
 
+    /**
+     * Sets the IViewAction to perform.
+     *
+     * @param action IViewAction instance.
+     */
     public void setAction(IViewAction action) {
         this.action = action;
     }
 
+    /**
+     * Adds the the children of this instance all the ViewConfigurations held in the provided list,
+     * with the specified key.
+     *
+     * @param key String key for identify the provided collection.
+     * @param list List of ViewConfiguration objects.
+     */
     public synchronized void addChildrenConfigurations(String key, List<ViewConfiguration> list) {
+        if (key == null) {
+            return;
+        }
+
         for (ViewConfiguration configuration : list) {
             if (configuration == null) {
                 continue;
@@ -207,31 +331,21 @@ public final class ViewConfiguration {
         children.addAll(list);
     }
 
+    /**
+     * Returns the children which keys match the given key.
+     *
+     * @param key String key of the children.
+     * @return List of ViewConfiguration objects.
+     */
     public List<ViewConfiguration> getChildrenConfigurations(String key) {
         if (key == null) {
             return children;
         }
 
-        List<ViewConfiguration> results = new ArrayList<>();
+        final List<ViewConfiguration> results = new ArrayList<>();
 
         for (ViewConfiguration configuration: children) {
-            if (configuration.getKey().equals(key)) {
-                results.add(configuration);
-            }
-        }
-
-        return results;
-    }
-
-    public List<ViewConfiguration> getChildrenConfigurations(IViewConfigurationFilter filter) {
-        if (filter == null) {
-            return children;
-        }
-
-        List<ViewConfiguration> results = new ArrayList<>();
-
-        for (ViewConfiguration configuration: children) {
-            if (filter.match(configuration.getKey(), configuration)) {
+            if (configuration.key().equals(key)) {
                 results.add(configuration);
             }
         }
@@ -240,7 +354,29 @@ public final class ViewConfiguration {
     }
 
     /**
-     * Helper methods for accessing simple data with cast safety
+     * Returns the children which match the given filter.
+     *
+     * @param filter IViewConfiguration filter.
+     * @return List of ViewConfiguration objects.
+     */
+    public List<ViewConfiguration> getChildrenConfigurations(IViewConfigurationFilter filter) {
+        if (filter == null) {
+            return children;
+        }
+
+        final List<ViewConfiguration> results = new ArrayList<>();
+
+        for (ViewConfiguration configuration: children) {
+            if (filter.match(configuration)) {
+                results.add(configuration);
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Helper methods for accessing simple data with type safety.
      */
 
     private Map<String, Object> params;
@@ -350,4 +486,41 @@ public final class ViewConfiguration {
 
         return defaultValue;
     }
+
+    /**
+     * Overriding of the equals method.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ViewConfiguration)) return false;
+        ViewConfiguration that = (ViewConfiguration) o;
+        return viewId.equals(that.viewId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(viewId);
+    }
+
+    /**
+     * Initialization utilities.
+     */
+    private String validateId(String id) {
+        if (id == null || id.equals("")) {
+            return String.valueOf(hashCode());
+        }
+
+        return id;
+    }
+
+    private String validateBinder(String binderType) {
+        if (binderType == null || binderType.equals("")) {
+            return COMMON_BINDER;
+        }
+
+        return binderType;
+    }
+
+
 }

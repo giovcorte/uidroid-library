@@ -3,13 +3,13 @@ package com.uidroid.uidroid.binder;
 import android.view.View;
 import android.widget.ImageView;
 
-import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.loader.ImageRequest;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
 import java.util.Objects;
 
+@SuppressWarnings("unused")
 public class ImageViewBinder<V extends ImageView> extends ViewBinder<V> {
 
     public static final String SIZE = "size";
@@ -67,11 +67,6 @@ public class ImageViewBinder<V extends ImageView> extends ViewBinder<V> {
 
     @Override
     public void doUnbind(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
-        databindingContext.getImageLoader().cancel(configuration.getStringParam(URL));
-    }
-
-    @Override
-    public void doRemove(DatabindingContext databindingContext, ViewConfiguration configuration) {
         databindingContext.getImageLoader().cancel(configuration.getStringParam(URL));
     }
 

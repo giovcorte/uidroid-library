@@ -81,6 +81,7 @@ public class ViewFactoryProcessor {
             out.println("import android.widget.ImageView;");
             out.println("import androidx.recyclerview.widget.RecyclerView;");
             out.println("import com.uidroid.uidroid.factory.IViewFactory;");
+            out.println("import com.uidroid.uidroid.DatabindingException;");
             for (String clazz: result) {
                 out.println("import " + clazz + ";");
             }
@@ -100,7 +101,7 @@ public class ViewFactoryProcessor {
                 out.print("        return new " + getSimpleName(entry) + "(context); \n");
             });
             out.print("      default: \n");
-            out.print("         throw new RuntimeException(\"Cannot create view for \" + value); \n");
+            out.print("         throw new DatabindingException(\"Cannot create View for value\"); \n");
             out.print("    } \n");
             out.print("  } \n\n");
             out.println("}");

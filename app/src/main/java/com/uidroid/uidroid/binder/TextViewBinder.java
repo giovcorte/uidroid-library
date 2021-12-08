@@ -2,22 +2,22 @@ package com.uidroid.uidroid.binder;
 
 import android.graphics.Typeface;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.TextView;
 
+import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
+@SuppressWarnings("unused")
+@UI.BinderFor(view = TextView.class)
 public class TextViewBinder<V extends TextView> extends ListenerViewBinder<V, EditTextViewBinder.EditTextListener> {
 
-    @SuppressWarnings("unused")
     public static final class TextFace {
         public static final int BOLD = Typeface.BOLD;
         public static final int NORMAL = Typeface.NORMAL;
         public static final int ITALIC = Typeface.ITALIC;
     }
 
-    @SuppressWarnings("unused")
     public static final class TextGravity {
         public static final int START = Gravity.START;
         public static final int CENTER = Gravity.CENTER;
@@ -29,10 +29,6 @@ public class TextViewBinder<V extends TextView> extends ListenerViewBinder<V, Ed
     public static final String FACE = "face";
     public static final String GRAVITY = "gravity";
 
-    public TextViewBinder() {
-        super();
-    }
-
     @Override
     public void doBind(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         handleText(view, configuration);
@@ -42,11 +38,7 @@ public class TextViewBinder<V extends TextView> extends ListenerViewBinder<V, Ed
     }
 
     private void handleText(V view, ViewConfiguration configuration) {
-        if (configuration.getStringParam(TEXT) != null) {
-            view.setText(configuration.getStringParam(TEXT));
-        } else {
-            view.setVisibility(View.GONE);
-        }
+        view.setText(configuration.getStringParam(TEXT));
     }
 
     private void handleGravity(V view, ViewConfiguration configuration) {
@@ -75,11 +67,6 @@ public class TextViewBinder<V extends TextView> extends ListenerViewBinder<V, Ed
 
     @Override
     public void doUnbind(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {
-
-    }
-
-    @Override
-    public void doRemove(DatabindingContext databindingContext, ViewConfiguration configuration) {
 
     }
 

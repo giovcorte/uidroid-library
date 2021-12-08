@@ -25,7 +25,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      * Constructor.
      *
      * @param databindingContext DatabindingContext.
-     * @param configuration IViewConfiguration
+     * @param configuration ViewConfiguration configuration from which children will be displayed.
      */
     public GenericRecyclerViewAdapter(DatabindingContext databindingContext,
                                       ViewConfiguration configuration,
@@ -39,19 +39,19 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
     @Override
     public GenericViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         final ViewConfiguration holderConfiguration = configuration.getChildrenConfigurations(filter).get(viewType);
-        final View view = databindingContext.buildView(parent.getContext(), holderConfiguration.getViewType());
+        final View view = databindingContext.buildView(parent.getContext(), holderConfiguration.view());
 
         return new GenericViewHolder(view, holderConfiguration);
     }
 
     @Override
     public void onBindViewHolder(@NonNull GenericViewHolder holder, int position) {
-        databindingContext.bindViewToConfiguration(holder.itemView, holder.model);
+        databindingContext.configureView(holder.itemView, holder.model);
     }
 
     @Override
     public void onViewRecycled(@NonNull GenericViewHolder holder) {
-        databindingContext.unbindView(holder.itemView, holder.model);
+        databindingContext.unconfigureView(holder.itemView, holder.model);
         super.onViewRecycled(holder);
     }
 
@@ -105,7 +105,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
         final int position = itemPositionByKey(key);
 
         if (position != -1) {
-            configuration.removeChildByFilter((key1, model) -> key1.equals(key));
+            configuration.removeChildByFilter(configuration -> configuration.key().equals(key));
 
             notifyItemRemoved(position);
         }
@@ -126,8 +126,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
     }
 
     /**
-     * Finds and returns the position of the first element which has the specified key and satisfy
-     * the provided filter.
+     * Finds and returns the position of the first element which has the specified key.
      *
      * @param key String representing the key for the given child Configuration.
      * @return integer for the position.
@@ -137,7 +136,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
         boolean found = false;
 
         for (ViewConfiguration configuration: configuration.getChildrenConfigurations(filter)) {
-            if (configuration.getKey().equals(key)) {
+            if (configuration.key().equals(key)) {
                 found = true;
                 break;
             }

@@ -35,10 +35,10 @@ public class GenericPagerAdapter extends PagerAdapter {
     @NonNull
     public Object instantiateItem(@NonNull ViewGroup container, int position) {
         final ViewConfiguration model = configuration.getChildrenConfigurations(filter).get(position);
-        final View view = databindingContext.buildView(container.getContext(), model.getViewType());
+        final View view = databindingContext.buildView(container.getContext(), model.view());
 
         container.addView(view);
-        databindingContext.bindViewToConfiguration(view,
+        databindingContext.configureView(view,
                 configuration.getChildrenConfigurations(filter).get(position));
 
         return view;

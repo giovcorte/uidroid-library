@@ -67,11 +67,11 @@ public class ViewConfigurationFactoryProcessor {
                 if (!map.containsKey(clazz)) {
                     map.put(clazz, new Configuration());
                 }
-                map.get(clazz).viewType = getViewClass(item);
+                map.get(clazz).viewType = getClassType(item);
 
                 UI.BindWith binder = annotatedElement.getAnnotation(UI.BindWith.class);
                 if (binder != null) {
-                    map.get(clazz).binder = getBinderClass(binder);
+                    map.get(clazz).binder = getClassType(binder);
                 }
 
                 UI.StableParam[] params = item.params();
@@ -218,7 +218,7 @@ public class ViewConfigurationFactoryProcessor {
                     key = variable.getSimpleName().toString();
                 }
 
-                String viewClass = getViewClass(item);
+                String viewClass = getClassType(item);
                 String fieldName = variable.getSimpleName().toString();
                 String className = ((TypeElement) annotatedElement.getEnclosingElement()).getQualifiedName().toString();
                 UI.StableParam[] params = item.params();
@@ -230,7 +230,7 @@ public class ViewConfigurationFactoryProcessor {
                             new ChildConfigurationElement(fieldName, FieldToConfigurationElementType.OBJECT, key, viewClass, id);
 
                     if (binder != null) {
-                        childConfigurationElement.binder = getBinderClass(binder);
+                        childConfigurationElement.binder = getClassType(binder);
                     }
 
                     for (UI.StableParam param: params) {
@@ -267,6 +267,8 @@ public class ViewConfigurationFactoryProcessor {
             out.println();
             out.println("import com.uidroid.uidroid.model.ViewConfiguration;");
             out.println("import com.uidroid.uidroid.factory.IViewConfigurationFactory;");
+            out.println("import com.uidroid.uidroid.DatabindingContext;");
+            out.println("import com.uidroid.uidroid.DatabindingException;");
             out.println("import java.util.List;");
             out.println("import java.util.ArrayList;");
             for (String clazz: map.keySet()) {
@@ -283,7 +285,7 @@ public class ViewConfigurationFactoryProcessor {
                 out.print("        return this.build((" + getSimpleName(objectView) + ") object); \n");
             });
             out.print("      default: \n");
-            out.print("         return null; \n");
+            out.print("         throw new DatabindingException(\"Cannot create ViewConfiguration for object\"); \n");
             out.print("    } \n");
             out.print("  } \n\n");
 
@@ -297,43 +299,22 @@ public class ViewConfigurationFactoryProcessor {
                 out.print("    } \n");
 
                 // Construct the ViewConfiguration instance
-                String idField = configuration.id;
-                String viewType = configuration.viewType;
-                if (configuration.binder == null) {
-                    if (idField != null) {
-                        out.print("    String id = value." + idField
-                                + " != null ? value." + idField
-                                + " : String.valueOf(value.hashCode()); \n");
-                        out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("id", getCodeString(viewType), "null")
-                                + "); \n");
-                    } else {
-                        out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("String.valueOf(value.hashCode())", getCodeString(viewType), "null")
-                                + "); \n");
-                    }
-                } else {
-                    String binderType = configuration.binder;
-                    if (configuration.id != null) {
-                        out.print("    String id = value." + idField + " != null ? value." + idField
-                                + " : String.valueOf(value.hashCode()); \n");
-                        out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("id", getCodeString(viewType), getCodeString(binderType))
-                                + "); \n");
-                    } else {
-                        out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("String.valueOf(value.hashCode())", getCodeString(viewType), getCodeString(binderType))
-                                + "); \n");
-                    }
-                }
+                final String idField = configuration.id != null ? "value." + configuration.id : "null";
+                final String viewType = configuration.viewType;
+                final String binderType = configuration.binder != null ? configuration.binder : "commonBinder";
+
+                out.print("    ViewConfiguration object = new ViewConfiguration("
+                        + getCodeParams(idField, getCodeString(viewType), getCodeString(binderType))
+                        + "); \n");
 
                 int i = 1; // for multiple simple objects method
                 for (ChildConfigurationElement element : configuration.childConfigurationElements) {
+                    // Action
                     if (element.type.equals(FieldToConfigurationElementType.ACTION)) {
                         out.println("    object.setAction(value." + element.fieldName + ");");
                         continue;
                     }
-
+                    // Configurations list
                     if (element.type.equals(FieldToConfigurationElementType.ELEMENT_LIST)) {
                         out.println("    this.bulk(" + getCodeParams("object",
                                 getCodeString(element.key),
@@ -341,7 +322,7 @@ public class ViewConfigurationFactoryProcessor {
                                 + "));");
                         continue;
                     }
-
+                    // Configuration
                     if (element.type.equals(FieldToConfigurationElementType.ELEMENT)) {
                         String child = "this.build(value." + element.fieldName + ")";
                         out.print("    object.addChildConfiguration("
@@ -349,7 +330,7 @@ public class ViewConfigurationFactoryProcessor {
                                 + "); \n");
                         continue;
                     }
-
+                    // Parameter
                     if (element.type.equals(FieldToConfigurationElementType.PARAMETER)) {
                         String child = "value." + element.fieldName;
                         out.print("    object.putParam("
@@ -391,7 +372,7 @@ public class ViewConfigurationFactoryProcessor {
                 out.print("    return object; \n");
                 out.print("  } \n\n");
             });
-
+            // Specific method to add list of objects as children
             out.println("  private void bulk(ViewConfiguration parent, String key, List<Object> objects) { \n" +
                     "    for (Object object: objects) { \n" +
                     "      parent.addChildConfiguration(key, this.build(object)); \n" +
@@ -459,7 +440,7 @@ public class ViewConfigurationFactoryProcessor {
 
     }
 
-    private String getBinderClass(UI.BindWith annotation) {
+    private String getClassType(UI.BindWith annotation) {
         try {
             Class<?> value = annotation.binder();
             return value.getCanonicalName();
@@ -468,7 +449,7 @@ public class ViewConfigurationFactoryProcessor {
         }
     }
 
-    private String getViewClass(UI.ViewConfiguration annotation) {
+    private String getClassType(UI.ViewConfiguration annotation) {
         try {
             Class<?> value = annotation.view();
             return value.getCanonicalName();
@@ -477,7 +458,7 @@ public class ViewConfigurationFactoryProcessor {
         }
     }
 
-    private String getViewClass(UI.FieldConfiguration annotation) {
+    private String getClassType(UI.FieldConfiguration annotation) {
         try {
             Class<?> value = annotation.view();
             return value.getCanonicalName();

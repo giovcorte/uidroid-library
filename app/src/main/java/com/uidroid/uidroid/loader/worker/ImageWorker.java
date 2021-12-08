@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.widget.ImageView;
 
+import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.loader.ImageException;
 import com.uidroid.uidroid.loader.ImageLoader;
 import com.uidroid.uidroid.loader.ImageRequest;
@@ -41,7 +42,6 @@ public abstract class ImageWorker implements Callable<Void> {
             return null;
         }
 
-        // Download image and cache it
         Bitmap bitmap = getBitmap(request.getSource());
 
         if (bitmap == null) {
@@ -56,7 +56,6 @@ public abstract class ImageWorker implements Callable<Void> {
             return null;
         }
 
-        // Set bitmap with a runnable in the main thread
         callback.onSuccess(bitmap, view, request);
         return null;
     }

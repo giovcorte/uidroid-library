@@ -4,13 +4,6 @@ import java.util.List;
 
 public final class Utils {
 
-    public static String capitalize(String name) {
-        if (name.length() == 1) {
-            return name.toUpperCase();
-        }
-        return name.substring(0, 1).toUpperCase() + name.substring(1);
-    }
-
     public static String firstLowerCased(String s) {
         return Character.toLowerCase(s.charAt(0)) + s.substring(1);
     }

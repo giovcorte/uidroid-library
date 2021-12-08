@@ -7,33 +7,51 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class ViewComposite {
+public final class ViewComposite implements IViewComposite {
 
-    private final Map<String, ChildView> mapping = new LinkedHashMap<>();
+    private final Map<String, CompositeChild> mapping = new LinkedHashMap<>();
 
-    public static class ChildView {
+    public static class CompositeChild implements IViewCompositeChild{
         public String key;
         public View view;
         public int fallback;
 
-        public ChildView(String key, View view, int fallback) {
+        public CompositeChild(String key, View view, int fallback) {
             this.key = key;
             this.view = view;
             this.fallback = fallback;
         }
 
+        @Override
+        public String key() {
+            return key;
+        }
+
+        @Override
+        public View view() {
+            return view;
+        }
+
+        @Override
+        public int fallback() {
+            return fallback;
+        }
     }
 
-    @SuppressWarnings("unused")
-    public void put(String key, View view, int fallback) {
-        mapping.put(key, new ChildView(key, view, fallback));
+    @Override
+    public void putChildView(String key, View view, int fallback) {
+        if (view != null) {
+            mapping.put(key, new CompositeChild(key, view, fallback));
+        }
     }
 
-    public List<ChildView> getSubViews() {
+    @Override
+    public List<IViewCompositeChild> getChildrenViews() {
         return new ArrayList<>(mapping.values());
     }
 
-    public ChildView getSubView(String key) {
+    @Override
+    public CompositeChild getChildView(String key) {
         return mapping.get(key);
     }
 

@@ -19,7 +19,8 @@ public class GenericViewHolder extends RecyclerView.ViewHolder {
 
     public GenericViewHolder(@NonNull View itemView, ViewConfiguration model) {
         super(itemView);
-        itemView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+        this.itemView.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         this.model = model;
     }

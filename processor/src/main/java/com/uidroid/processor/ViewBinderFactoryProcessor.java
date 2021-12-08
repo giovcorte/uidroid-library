@@ -193,15 +193,14 @@ public class ViewBinderFactoryProcessor {
                 .createSourceFile("com.uidroid.uidroid.factory.ViewBinderFactory");
 
         try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
-            out.print("package ");
-            out.print(packageName);
-            out.println(";");
+            out.print("package " + packageName + ";");
             out.println();
             out.println("import android.view.View;");
             out.println("import java.util.List;");
             out.println("import java.util.ArrayList;");
             out.println("import com.uidroid.uidroid.factory.IViewBinderFactory;");
             out.println("import com.uidroid.uidroid.binder.IViewBinder;");
+            out.println("import com.uidroid.uidroid.DatabindingException;");
             for (String clazz : result.keySet()) {
                 out.println("import " + getClearClassName(clazz) + ";");
             }
@@ -230,7 +229,7 @@ public class ViewBinderFactoryProcessor {
                 out.print("        return new " + getSimpleName(type) + "(" + getParams(value.constructorParameters) + "); \n");
             });
             out.print("      default: \n");
-            out.print("         throw new RuntimeException(\"Cannot create binder for \" + value); \n");
+            out.print("         throw new DatabindingException(\"Cannot create IViewBinder for value\"); \n");
             out.print("    } \n");
             out.print("  } \n\n");
             out.println("}");
@@ -259,12 +258,12 @@ public class ViewBinderFactoryProcessor {
         messager.printMessage(Diagnostic.Kind.ERROR, message);
     }
 
-    public static class BinderInfo {
+    static class BinderInfo {
 
         public List<String> viewClassNames = new ArrayList<>();
         public List<String> constructorParameters = new ArrayList<>();
 
-        public BinderInfo() {
+        BinderInfo() {
 
         }
 

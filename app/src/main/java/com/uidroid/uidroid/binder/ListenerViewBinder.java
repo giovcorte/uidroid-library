@@ -27,9 +27,4 @@ public abstract class ListenerViewBinder<V extends View, L> extends ViewBinder<V
         super.unbindView(databindingContext, configuration, view);
     }
 
-    @Override
-    public void removeView(DatabindingContext databindingContext, ViewConfiguration configuration) {
-        unsubscribeListener();
-        super.removeView(databindingContext, configuration);
-    }
 }

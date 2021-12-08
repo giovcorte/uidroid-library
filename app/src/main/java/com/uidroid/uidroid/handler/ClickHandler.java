@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("unused")
 public class ClickHandler implements IClickHandler {
 
     private final Map<Integer, List<IViewAction>> actions =
@@ -31,7 +32,7 @@ public class ClickHandler implements IClickHandler {
             return;
         }
 
-        List<IViewAction> actionsForId = actions.get(id);
+        final List<IViewAction> actionsForId = actions.get(id);
 
         if (actionsForId != null) {
             for (IViewAction action: actionsForId) {

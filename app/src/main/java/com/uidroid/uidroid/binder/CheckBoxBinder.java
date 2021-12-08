@@ -2,10 +2,10 @@ package com.uidroid.uidroid.binder;
 
 import android.widget.CheckBox;
 
-import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
+@SuppressWarnings("unused")
 public class CheckBoxBinder extends ListenerViewBinder<CheckBox, CheckBoxBinder.ICheckBoxListener> {
 
     public static final String CHECKBOX_SELECTED = "checkboxSelected";
@@ -14,15 +14,11 @@ public class CheckBoxBinder extends ListenerViewBinder<CheckBox, CheckBoxBinder.
         void onCheckBoxSelected(String id, boolean checked);
     }
 
-    public CheckBoxBinder() {
-        super();
-    }
-
     @Override
     public void doBind(CheckBox view, ViewConfiguration configuration, DatabindingContext databindingContext) {
         view.setChecked(configuration.getBooleanParam(CHECKBOX_SELECTED, false));
         databindingContext.bindAction(view, () -> {
-            String checkboxId = configuration.getId();
+            String checkboxId = configuration.id();
             if (getListener() != null) {
                 getListener().onCheckBoxSelected(checkboxId, view.isChecked());
             }
@@ -32,12 +28,7 @@ public class CheckBoxBinder extends ListenerViewBinder<CheckBox, CheckBoxBinder.
 
     @Override
     public void doUnbind(CheckBox view, ViewConfiguration configuration, DatabindingContext databindingContext) {
-
-    }
-
-    @Override
-    public void doRemove(DatabindingContext databindingContext, ViewConfiguration configuration) {
-
+        configuration.putParam(CHECKBOX_SELECTED, view.isChecked());
     }
 
 }

@@ -47,7 +47,9 @@ public class ViewCompositeFactoryProcessor {
                 error("Only class can be annotated with UI.CompositeView", annotatedElement);
                 continue;
             }
+
             UI.CustomView item = annotatedElement.getAnnotation(UI.CustomView.class);
+
             if (item != null) {
                 String clazz = annotatedElement.asType().toString();
                 if (!map.containsKey(clazz)) {
@@ -61,7 +63,9 @@ public class ViewCompositeFactoryProcessor {
                 error("Only fields can be annotated with UI.View", annotatedElement);
                 continue;
             }
+
             UI.View item = annotatedElement.getAnnotation(UI.View.class);
+
             VariableElement variable = ((VariableElement) annotatedElement);
 
             String fieldName = variable.getSimpleName().toString();
@@ -95,39 +99,39 @@ public class ViewCompositeFactoryProcessor {
                 .createSourceFile("com.uidroid.uidroid.factory.ViewCompositeFactory");
 
         try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
-            out.print("package ");
-            out.print(packageName);
-            out.println(";");
+            out.print("package " + packageName + ";");
             out.println();
             out.println("import android.view.View;");
             out.println("import java.util.List;");
             out.println("import java.util.ArrayList;");
             out.println("import com.uidroid.uidroid.view.ViewComposite;");
+            out.println("import com.uidroid.uidroid.view.IViewComposite;");
             out.println("import com.uidroid.uidroid.factory.IViewCompositeFactory;");
+            out.println("import com.uidroid.uidroid.DatabindingException;");
             for (String clazz: map.keySet()) {
                 out.println("import " + clazz + ";");
             }
             out.println();
 
             out.print("public final class " + simpleClassName + " implements IViewCompositeFactory { \n\n");
-            out.print("  public ViewComposite build(View object) { \n");
+            out.print("  public IViewComposite build(View object) { \n");
             out.print("    switch(object.getClass().getCanonicalName()) { \n");
             map.forEach((viewType, value) -> {
                 out.print("      case " + getCodeString(viewType) + ": \n");
                 out.print("        return this.build((" + getSimpleName(viewType) + ") object); \n");
             });
             out.print("      default: \n");
-            out.print("         return null; \n");
+            out.print("         throw new DatabindingException(\"Cannot create ViewComposite for object\"); \n");
             out.print("    } \n");
             out.print("  } \n\n");
 
             map.forEach((key, childElements) -> {
                 String objectView = getSimpleName(key);
 
-                out.print("  public ViewComposite build(" + objectView + " value) { \n");
-                out.print("    ViewComposite object = new ViewComposite(); \n");
+                out.print("  public IViewComposite build(" + objectView + " value) { \n");
+                out.print("    IViewComposite object = new ViewComposite(); \n");
                 for (ChildView childElement : childElements) {
-                    out.print("    object.put("
+                    out.print("    object.putChildView("
                             + getCodeParams(getCodeString(childElement.key), "value." + childElement.fieldName, String.valueOf(childElement.fallback))
                             + "); \n");
                 }

@@ -6,8 +6,6 @@ import com.uidroid.uidroid.R;
 
 public class ImageRequest {
 
-    private int viewCode;
-
     private final String source;
 
     private final ImageView.ScaleType scaleType;
@@ -37,14 +35,7 @@ public class ImageRequest {
         return requiredSize;
     }
 
-    public int getViewCode() {
-        return viewCode;
-    }
-
-    public void setViewCode(int viewCode) {
-        this.viewCode = viewCode;
-    }
-
+    @SuppressWarnings("unused")
     public static class Builder {
 
         private String source;

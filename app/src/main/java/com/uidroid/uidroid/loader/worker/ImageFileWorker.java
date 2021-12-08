@@ -37,7 +37,6 @@ public class ImageFileWorker extends ImageWorker {
 
             return bitmap;
         } catch (IOException e) {
-            e.printStackTrace();
             return null;
         }
     }

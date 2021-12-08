@@ -2,10 +2,11 @@ package com.uidroid.uidroid.factory;
 
 import android.view.View;
 
-import com.uidroid.uidroid.view.ViewComposite;
+import com.uidroid.uidroid.DatabindingException;
+import com.uidroid.uidroid.view.IViewComposite;
 
 public interface IViewCompositeFactory {
 
-    ViewComposite build(View object);
+    IViewComposite build(View object) throws DatabindingException;
 
 }
