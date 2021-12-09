@@ -174,9 +174,31 @@ public final class ViewConfiguration {
         return false;
     }
 
+    /**
+     * Returns the first available child with the given key, id any.
+     *
+     * @param key String representing the child.
+     * @return ViewConfiguration child for the specified key.
+     */
     public ViewConfiguration getChildConfigurationByKey(String key) {
         for (ViewConfiguration configuration: children) {
             if (configuration.getKey().equals(key)) {
+                return configuration;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the available child with the given id, if any.
+     *
+     * @param id String representing the child.
+     * @return ViewConfiguration child for the specified key.
+     */
+    public ViewConfiguration getChildConfigurationById(String id) {
+        for (ViewConfiguration configuration: children) {
+            if (configuration.getId().equals(id)) {
                 return configuration;
             }
         }

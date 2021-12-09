@@ -308,12 +308,11 @@ public abstract class DatabindingContext {
             // Unbinding composite views
             final ViewComposite composite = buildViewComposite(view);
 
-            for (ViewComposite.ChildView compositeChild: composite.getSubViews()) {
-                final ViewConfiguration childConfiguration =
-                        binding.configuration.getChildConfigurationByKey(compositeChild.key);
+            for (ViewConfiguration childConfiguration: binding.configuration.getChildrenConfigurations()) {
+                final ViewComposite.ChildView childView = composite.getSubView(childConfiguration.getKey());
 
-                if (compositeChild.view != null && childConfiguration != null) {
-                    queue.add(new ViewBindingPair(compositeChild.view, childConfiguration));
+                if (childView != null && childView.view != null) {
+                    queue.add(new ViewBindingPair(childView.view, childConfiguration));
                 }
             }
 
