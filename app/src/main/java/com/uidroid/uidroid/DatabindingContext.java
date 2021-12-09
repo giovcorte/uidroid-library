@@ -183,8 +183,8 @@ public abstract class DatabindingContext {
         buildViewTag(view, configuration);
         buildBindingEntry(configuration);
 
-        bindCompositeView(view, configuration);
-        bindViewElements(view, configuration);
+        bindViewBinder(view, configuration);
+        bindViewComposite(view, configuration);
         bindAction(view, configuration.getAction());
 
         if (!configuration.hasParent()) {
@@ -287,14 +287,17 @@ public abstract class DatabindingContext {
 
         while (!queue.isEmpty()) {
             final ViewBindingPair binding = queue.poll();
-            final ViewTag tag = getViewTag(view);
 
             if (binding == null) {
                 continue;
             }
 
-            getDatabindingEntry(binding.configuration.getId()).binder
-                    .unbindView(this, binding.configuration, binding.view);
+            final ViewTag tag = getViewTag(view);
+            final IViewBinder binder = getDatabindingEntry(binding.configuration.getId()).binder;
+
+            if (binder != null) {
+                binder.unbindView(this, binding.configuration, binding.view);
+            }
 
             if (tag != null) {
                 clickHandler.unsubscribeActions(tag.uuid);
@@ -661,7 +664,7 @@ public abstract class DatabindingContext {
      * @param view Android view.
      * @param configuration IViewConfiguration configuration.
      */
-    private void bindCompositeView(View view, ViewConfiguration configuration) {
+    private void bindViewBinder(View view, ViewConfiguration configuration) {
         if (!hasDatabindingEntry(configuration.getId())) {
             createDatabindingEntry(configuration);
         }
@@ -695,7 +698,7 @@ public abstract class DatabindingContext {
      * @param view Android view
      * @param configuration IViewConfiguration to bind to view
      */
-    private void bindViewElements(View view, ViewConfiguration configuration) {
+    private void bindViewComposite(View view, ViewConfiguration configuration) {
         if (isInvalidViewConfiguration(view, configuration)) {
             return;
         }
