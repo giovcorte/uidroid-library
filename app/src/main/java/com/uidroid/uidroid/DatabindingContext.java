@@ -208,7 +208,7 @@ public abstract class DatabindingContext {
      */
     public void configureView(View view, ViewConfiguration configuration, String id) {
         if (!isValidViewAndConfiguration(view, configuration)) {
-            DatabindingLogger.log(DatabindingLogger.Level.INFO, "Cannot bind null view and/or object");
+            DatabindingLogger.log(DatabindingLogger.Level.INFO, "Cannot bind invalid view and configuration");
             return;
         }
 
@@ -224,8 +224,7 @@ public abstract class DatabindingContext {
      */
     public void configureView(View view, ViewConfiguration configuration) {
         if (!isValidViewAndConfiguration(view, configuration)) {
-            DatabindingLogger.log(DatabindingLogger.Level.INFO,
-                    "Cannot bind null view and/or object");
+            DatabindingLogger.log(DatabindingLogger.Level.INFO, "Cannot bind invalid view and configuration");
             return;
         }
 
@@ -675,7 +674,7 @@ public abstract class DatabindingContext {
     private IViewBinder buildBinderForConfiguration(ViewConfiguration configuration) {
         String type;
 
-        if (configuration.binder() != null) {
+        if (hasValidBinderType(configuration)) {
             type = configuration.binder();
         } else {
             type = configuration.view();
@@ -712,6 +711,7 @@ public abstract class DatabindingContext {
             if (isValidView(childView) && !isValidConfiguration(childConfiguration)) {
                 childView.setVisibility(VisibilityFallbackFactory
                         .createVisibilityFallback(compositeChild.fallback()));
+                DatabindingLogger.log(DatabindingLogger.Level.INFO, "Cannot find composite child/configuration child match");
                 continue;
             }
 
@@ -734,6 +734,17 @@ public abstract class DatabindingContext {
 
             view.setOnClickListener(v -> clickHandler.executeActions(tag.uuid));
         }
+    }
+
+    /**
+     * Checks if the provided configuration has a possibly valid binder type to override the default
+     * for the view type.
+     *
+     * @param configuration ViewConfiguration for which generate the binder.
+     * @return boolean true if binder type can be evaluated by factory, false otherwise.
+     */
+    private boolean hasValidBinderType(ViewConfiguration configuration) {
+        return configuration.binder() != null && !configuration.binder().equals(COMMON_BINDER);
     }
 
     /**
