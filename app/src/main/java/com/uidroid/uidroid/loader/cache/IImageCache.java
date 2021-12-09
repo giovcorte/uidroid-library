@@ -6,6 +6,7 @@ public interface IImageCache {
 
     Bitmap get(String key);
 
+    @SuppressWarnings("unused")
     boolean contains(String key);
 
     void put(String key, Bitmap bitmap);

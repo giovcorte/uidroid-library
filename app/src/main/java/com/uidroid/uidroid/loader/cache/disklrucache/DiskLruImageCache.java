@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.uidroid.uidroid.BuildConfig;
+import com.uidroid.uidroid.DatabindingLogger;
 import com.uidroid.uidroid.loader.cache.IImageCache;
 
 import java.io.BufferedInputStream;
@@ -27,17 +28,18 @@ public class DiskLruImageCache implements IImageCache {
             final File diskCacheDir = getDiskCacheDir(context, uniqueName);
             diskLruCache = DiskLruCache.open(diskCacheDir, 1, 1, diskCacheSize);
         } catch (IOException e) {
-            e.printStackTrace();
+            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot open disk cache");
         }
     }
 
     @Override
     public void put(String key, Bitmap data) {
-        String formattedKey = getDiskLruCacheFormattedString(key);
+        final String formattedKey = getDiskLruCacheFormattedString(key);
 
         DiskLruCache.Editor editor = null;
         try {
             editor = diskLruCache.edit(formattedKey);
+
             if (editor == null) {
                 return;
             }
@@ -45,32 +47,27 @@ public class DiskLruImageCache implements IImageCache {
             if (writeBitmapToFile(data, editor)) {
                 diskLruCache.flush();
                 editor.commit();
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "image put on disk cache " + key);
-                }
             } else {
                 editor.abort();
-                if (BuildConfig.DEBUG ) {
-                    Log.d(TAG, "ERROR on: image put on disk cache " + key);
-                }
             }
         } catch (IOException e) {
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "ERROR on: image put on disk cache " + key);
-            }
             try {
                 if (editor != null) {
                     editor.abort();
                 }
             } catch (IOException ignored) {
+
             }
+
+            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot write disk cache");
         }
 
     }
 
     @Override
     public Bitmap get(String key) {
-        String formattedKey = getDiskLruCacheFormattedString(key);
+        final String formattedKey = getDiskLruCacheFormattedString(key);
+
         Bitmap bitmap = null;
 
         try (DiskLruCache.Snapshot snapshot = diskLruCache.get(formattedKey)) {
@@ -79,17 +76,14 @@ public class DiskLruImageCache implements IImageCache {
             }
 
             final InputStream in = snapshot.getInputStream(0);
+
             if (in != null) {
                 final BufferedInputStream buffIn =
                         new BufferedInputStream(in, 8 * 1024);
                 bitmap = BitmapFactory.decodeStream(buffIn);
             }
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (BuildConfig.DEBUG) {
-            Log.d(TAG, bitmap == null ? "" : "image read from disk " + key);
+            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot read disk cache");
         }
 
         return bitmap;
@@ -102,7 +96,7 @@ public class DiskLruImageCache implements IImageCache {
         try (DiskLruCache.Snapshot snapshot = diskLruCache.get(key)) {
             contained = snapshot != null;
         } catch (IOException e) {
-            e.printStackTrace();
+            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot read disk cache");
         }
 
         return contained;
@@ -113,13 +107,14 @@ public class DiskLruImageCache implements IImageCache {
         try {
             diskLruCache.delete();
         } catch ( IOException e ) {
-            e.printStackTrace();
+            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot clear disk cache");
         }
     }
 
     private boolean writeBitmapToFile( Bitmap bitmap, DiskLruCache.Editor editor ) {
         try (OutputStream out = new BufferedOutputStream(editor.newOutputStream(0), 1024 * 8)) {
             final int mCompressQuality = 70;
+
             return bitmap.compress(compressFormat, mCompressQuality, out);
         } catch (IOException e) {
             return false;
@@ -128,11 +123,13 @@ public class DiskLruImageCache implements IImageCache {
 
     private static String getDiskLruCacheFormattedString(String str) {
         String formatted = str.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+
         return formatted.substring(0, str.length() >= 120 ? 110 : str.length());
     }
 
     private File getDiskCacheDir(Context context, String uniqueName) {
         final String cachePath = context.getCacheDir().getPath();
+
         return new File(cachePath + File.separator + uniqueName);
     }
 

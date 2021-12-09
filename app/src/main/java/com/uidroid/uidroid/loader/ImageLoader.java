@@ -84,9 +84,7 @@ public final class ImageLoader implements IImageLoader {
             }
         };
 
-        final FutureTask<Void> worker = new FutureTask<>(
-                ImageWorkerFactory.getWorker(view, request, callback, cache)
-        );
+        final FutureTask<Void> worker = new FutureTask<>(getWorker(view, request, callback, cache));
 
         tasks.put(request.getSource(), worker);
         executorService.submit(worker);
@@ -98,45 +96,43 @@ public final class ImageLoader implements IImageLoader {
         if (task != null) {
             task.cancel(true);
         }
+
+        tasks.remove(id);
     }
 
-    private final static class ImageWorkerFactory {
+    private Callable<Void> getWorker(ImageView view,
+                                    ImageRequest request,
+                                    ImageCallback callback,
+                                    ImageCache cache) {
+        final String source = request.getSource();
 
-        private static Callable<Void> getWorker(ImageView view,
-                                        ImageRequest request,
-                                        ImageCallback callback,
-                                        ImageCache cache) {
-            final String source = request.getSource();
-
-            if (isUrl(source)) {
-                return new ImageUrlWorker(view, request, callback, cache);
-            }
-
-            if (isFile(source)) {
-                return new ImageFileWorker(view, request, callback, cache);
-            }
-
-            if (isResource(source)) {
-                return new ImageResourceWorker(view, request, callback, cache);
-            }
-
-            return null;
+        if (isUrl(source)) {
+            return new ImageUrlWorker(view, request, callback, cache);
         }
 
-        private static boolean isUrl(String source) {
-            return Patterns.WEB_URL.matcher(source).matches();
+        if (isFile(source)) {
+            return new ImageFileWorker(view, request, callback, cache);
         }
 
-        private static boolean isFile(String source) {
-            final File file = new File(source);
-
-            return file.exists();
+        if (isResource(source)) {
+            return new ImageResourceWorker(view, request, callback, cache);
         }
 
-        private static boolean isResource(String source) {
-            return Utils.isInteger(source);
-        }
+        return null;
+    }
 
+    private static boolean isUrl(String source) {
+        return Patterns.WEB_URL.matcher(source).matches();
+    }
+
+    private static boolean isFile(String source) {
+        final File file = new File(source);
+
+        return file.exists();
+    }
+
+    private static boolean isResource(String source) {
+        return Utils.isInteger(source);
     }
 
     @SuppressWarnings("unused")
