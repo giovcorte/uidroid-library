@@ -8,16 +8,15 @@ import android.widget.TextView;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
+@SuppressWarnings("unused")
 public class TextViewBinder<V extends TextView> extends ListenerViewBinder<V, EditTextViewBinder.EditTextListener> {
 
-    @SuppressWarnings("unused")
     public static final class TextFace {
         public static final int BOLD = Typeface.BOLD;
         public static final int NORMAL = Typeface.NORMAL;
         public static final int ITALIC = Typeface.ITALIC;
     }
 
-    @SuppressWarnings("unused")
     public static final class TextGravity {
         public static final int START = Gravity.START;
         public static final int CENTER = Gravity.CENTER;
@@ -28,10 +27,6 @@ public class TextViewBinder<V extends TextView> extends ListenerViewBinder<V, Ed
     public static final String COLOR = "color";
     public static final String FACE = "face";
     public static final String GRAVITY = "gravity";
-
-    public TextViewBinder() {
-        super();
-    }
 
     @Override
     public void doBind(V view, ViewConfiguration configuration, DatabindingContext databindingContext) {

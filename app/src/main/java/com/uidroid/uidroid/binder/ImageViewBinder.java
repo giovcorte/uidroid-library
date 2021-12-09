@@ -10,6 +10,7 @@ import com.uidroid.uidroid.model.ViewConfiguration;
 
 import java.util.Objects;
 
+@SuppressWarnings("unused")
 public class ImageViewBinder<V extends ImageView> extends ViewBinder<V> {
 
     public static final String SIZE = "size";

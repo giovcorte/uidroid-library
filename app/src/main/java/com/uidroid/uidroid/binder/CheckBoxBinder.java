@@ -6,16 +6,13 @@ import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
+@SuppressWarnings("unused")
 public class CheckBoxBinder extends ListenerViewBinder<CheckBox, CheckBoxBinder.ICheckBoxListener> {
 
     public static final String CHECKBOX_SELECTED = "checkboxSelected";
 
     public interface ICheckBoxListener {
         void onCheckBoxSelected(String id, boolean checked);
-    }
-
-    public CheckBoxBinder() {
-        super();
     }
 
     @Override

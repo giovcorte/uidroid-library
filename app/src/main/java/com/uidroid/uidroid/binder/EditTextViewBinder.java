@@ -12,15 +12,12 @@ import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
+@SuppressWarnings("unused")
 public class EditTextViewBinder extends TextViewBinder<EditText> {
 
     public interface EditTextListener {
         void onTextChanged(String s);
         void onTextSubmit(String s);
-    }
-
-    public EditTextViewBinder() {
-        super();
     }
 
     @Override
