@@ -10,7 +10,7 @@ android {
         minSdk 24
         targetSdk 30
         versionCode 1
-        versionName "1.1.1"
+        versionName "1.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,6 +44,7 @@ afterEvaluate {
         publications {
             release(MavenPublication) {
                 from components.release
+                artifactId = 'uidroid'
             }
         }
     }

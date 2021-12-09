@@ -88,35 +88,78 @@ public final class ViewConfiguration {
         this.params = params;
     }
 
+    /**
+     * Creates a new ViewConfiguration instance equals to this, but with the new id.
+     *
+     * @param id String new id.
+     * @return ViewConfiguration instance.
+     */
     public ViewConfiguration cloneWithId(String id) {
         return new ViewConfiguration(id, viewType, binderType, viewKey, parent, children, action, params);
     }
 
+    /**
+     * Returns the id for this configuration. The constructors makes impossible to instantiate a
+     * ViewConfiguration object with a null id.
+     *
+     * @return String id.
+     */
     @NonNull
     public String getId() {
         return viewId;
     }
 
+    /**
+     * Returns the class type representing the view to generate and bind to this configuration.
+     *
+     * @return String view type.
+     */
     public String getViewType() {
         return viewType;
     }
 
+    /**
+     * Returns a specific class type for the desired binder class. If not specified, the fallback
+     * will be on the view type value.
+     *
+     * @return String for the binder class type.
+     */
     public String getBinderType() {
         return binderType;
     }
 
+    /**
+     * Returns the key associated to this configuration. If null this is a root configuration.
+     *
+     * @return String key.
+     */
     public String getKey() {
         return viewKey;
     }
 
+    /**
+     * Returns the father of this configuration in the view tree.
+     *
+     * @return ViewConfiguration father.
+     */
     public ViewConfiguration getParentConfiguration() {
         return this.parent;
     }
 
+    /**
+     * Checks if this configuration has a parent in the view tree.
+     *
+     * @return boolean.
+     */
     public boolean hasParent() {
         return this.parent != null;
     }
 
+    /**
+     * Returns all the children of this configuration.
+     *
+     * @return List of the children.
+     */
     public List<ViewConfiguration> getChildrenConfigurations() {
         return children;
     }
@@ -141,6 +184,12 @@ public final class ViewConfiguration {
         return null;
     }
 
+    /**
+     * Adds a single ViewConfiguration object as a child of this configuration.
+     *
+     * @param key String key for identify the child.
+     * @param configuration ViewConfiguration child.
+     */
     public synchronized void addChildConfiguration(String key, ViewConfiguration configuration) {
         if (configuration != null) {
             configuration.parent = this;
@@ -150,6 +199,11 @@ public final class ViewConfiguration {
         }
     }
 
+    /**
+     * Removes the ViewConfiguration child which match the provided filter.
+     *
+     * @param filter IViewConfigurationFilter to filter the children.
+     */
     public synchronized void removeChildByFilter(IViewConfigurationFilter filter) {
         if (filter != null) {
             for (ViewConfiguration configuration : children) {
@@ -161,6 +215,13 @@ public final class ViewConfiguration {
         }
     }
 
+    /**
+     * Removes the ViewConfiguration child at the provided position, in the sub-collection
+     * identified by the provided filter.
+     *
+     * @param position int position of the child to remove.
+     * @param filter IViewConfigurationFilter to filter the children.
+     */
     public synchronized void removeChildByPosition(int position, IViewConfigurationFilter filter) {
         int i = 0;
 
@@ -187,14 +248,31 @@ public final class ViewConfiguration {
         }
     }
 
+    /**
+     * Returns the action to perform when the associated view is clicked.
+     *
+     * @return IViewAction instance.
+     */
     public IViewAction getAction() {
         return action;
     }
 
+    /**
+     * Sets the IViewAction to perform.
+     *
+     * @param action IViewAction instance.
+     */
     public void setAction(IViewAction action) {
         this.action = action;
     }
 
+    /**
+     * Adds the the children of this instance all the ViewConfigurations held in the provided list,
+     * with the specified key.
+     *
+     * @param key String key for identify the provided collection.
+     * @param list List of ViewConfiguration objects.
+     */
     public synchronized void addChildrenConfigurations(String key, List<ViewConfiguration> list) {
         for (ViewConfiguration configuration : list) {
             if (configuration == null) {
@@ -207,6 +285,12 @@ public final class ViewConfiguration {
         children.addAll(list);
     }
 
+    /**
+     * Returns the children which keys match the given key.
+     *
+     * @param key String key of the children.
+     * @return List of ViewConfiguration objects.
+     */
     public List<ViewConfiguration> getChildrenConfigurations(String key) {
         if (key == null) {
             return children;
@@ -223,6 +307,12 @@ public final class ViewConfiguration {
         return results;
     }
 
+    /**
+     * Returns the children which match the given filter.
+     *
+     * @param filter IViewConfiguration filter.
+     * @return List of ViewConfiguration objects.
+     */
     public List<ViewConfiguration> getChildrenConfigurations(IViewConfigurationFilter filter) {
         if (filter == null) {
             return children;
