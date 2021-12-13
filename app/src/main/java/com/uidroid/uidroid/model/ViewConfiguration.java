@@ -2,6 +2,7 @@ package com.uidroid.uidroid.model;
 
 import androidx.annotation.NonNull;
 
+import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.handler.IViewAction;
 
 import java.util.ArrayList;
@@ -187,7 +188,7 @@ public final class ViewConfiguration {
             }
         }
 
-        return null;
+        return DatabindingContext.emptyConfiguration;
     }
 
     /**
@@ -203,7 +204,7 @@ public final class ViewConfiguration {
             }
         }
 
-        return null;
+        return DatabindingContext.emptyConfiguration;
     }
 
     /**
@@ -213,7 +214,7 @@ public final class ViewConfiguration {
      * @param configuration ViewConfiguration child.
      */
     public synchronized void addChildConfiguration(String key, ViewConfiguration configuration) {
-        if (configuration != null) {
+        if (DatabindingContext.isValidConfiguration(configuration)) {
             configuration.parent = this;
             configuration.viewKey = key;
 
@@ -297,14 +298,15 @@ public final class ViewConfiguration {
      */
     public synchronized void addChildrenConfigurations(String key, List<ViewConfiguration> list) {
         for (ViewConfiguration configuration : list) {
-            if (configuration == null) {
+            if (!DatabindingContext.isValidConfiguration(configuration)) {
                 continue;
             }
 
             configuration.parent = this;
             configuration.viewKey = key;
+
+            children.add(configuration);
         }
-        children.addAll(list);
     }
 
     /**
@@ -318,7 +320,7 @@ public final class ViewConfiguration {
             return children;
         }
 
-        List<ViewConfiguration> results = new ArrayList<>();
+        final List<ViewConfiguration> results = new ArrayList<>();
 
         for (ViewConfiguration configuration: children) {
             if (configuration.getKey().equals(key)) {
@@ -340,7 +342,7 @@ public final class ViewConfiguration {
             return children;
         }
 
-        List<ViewConfiguration> results = new ArrayList<>();
+        final List<ViewConfiguration> results = new ArrayList<>();
 
         for (ViewConfiguration configuration: children) {
             if (filter.match(configuration.getKey(), configuration)) {

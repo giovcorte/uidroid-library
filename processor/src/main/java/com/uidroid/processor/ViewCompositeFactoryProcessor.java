@@ -117,7 +117,7 @@ public class ViewCompositeFactoryProcessor {
                 out.print("        return this.build((" + getSimpleName(viewType) + ") object); \n");
             });
             out.print("      default: \n");
-            out.print("         return null; \n");
+            out.print("         throw new RuntimeException(\"Cannot create composite for \" + value); \n");
             out.print("    } \n");
             out.print("  } \n\n");
 

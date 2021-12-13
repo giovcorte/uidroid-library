@@ -283,7 +283,7 @@ public class ViewConfigurationFactoryProcessor {
                 out.print("        return this.build((" + getSimpleName(objectView) + ") object); \n");
             });
             out.print("      default: \n");
-            out.print("         return null; \n");
+            out.print("         throw new RuntimeException(\"Cannot create configuration for \" + value); \n");
             out.print("    } \n");
             out.print("  } \n\n");
 
@@ -305,11 +305,11 @@ public class ViewConfigurationFactoryProcessor {
                                 + " != null ? value." + idField
                                 + " : String.valueOf(value.hashCode()); \n");
                         out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("id", getCodeString(viewType), "null")
+                                + getCodeParams("id", getCodeString(viewType), getCodeString("emptyBinder"))
                                 + "); \n");
                     } else {
                         out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("String.valueOf(value.hashCode())", getCodeString(viewType), "null")
+                                + getCodeParams("String.valueOf(value.hashCode())", getCodeString(viewType), getCodeString("emptyBinder"))
                                 + "); \n");
                     }
                 } else {

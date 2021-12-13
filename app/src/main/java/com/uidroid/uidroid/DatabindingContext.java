@@ -80,6 +80,10 @@ public abstract class DatabindingContext {
 
     public final static String DATABINDING_CONTEXT_TAG = "DatabindingContext";
 
+    private final static String EMPTY_ID = "emptyId";
+    private final static String EMPTY_VIEW = "emptyView";
+    private final static String EMPTY_BINDER = "emptyBinder";
+
     private int lastTag = 0;
 
     private Handler mainHandler;
@@ -217,25 +221,20 @@ public abstract class DatabindingContext {
     public void removeView(String id) {
         final ViewConfiguration configuration = getDatabindingEntry(id).configuration;
 
-        if (configuration != null) {
-            final Queue<ViewConfiguration> queue = new LinkedList<>();
-            queue.add(configuration);
+        final Queue<ViewConfiguration> queue = new LinkedList<>();
+        queue.add(configuration);
 
-            while (!queue.isEmpty()) {
-                final ViewConfiguration current = queue.poll();
+        while (!queue.isEmpty()) {
+            final ViewConfiguration current = queue.poll();
 
-                if (current != null) {
-                    final IViewBinder binder = getDatabindingEntry(current.getId()).binder;
+            if (current != null) {
+                final IViewBinder binder = getDatabindingEntry(current.getId()).binder;
+                binder.removeView(this, current);
 
-                    if (binder != null) {
-                        binder.removeView(this, current);
-                    }
+                entries.remove(current.getId());
+                roots.remove(current.getId());
 
-                    entries.remove(current.getId());
-                    roots.remove(current.getId());
-
-                    queue.addAll(current.getChildrenConfigurations());
-                }
+                queue.addAll(current.getChildrenConfigurations());
             }
         }
     }
@@ -249,13 +248,11 @@ public abstract class DatabindingContext {
     public void unbindView(View view) {
         final ViewTag tag = getViewTag(view);
 
-        if (tag != null) {
-            final ViewConfiguration configuration =
-                    getDatabindingEntry(tag.configurationId).configuration;
+        final ViewConfiguration configuration =
+                getDatabindingEntry(tag.configurationId).configuration;
 
-            if (configuration != null) {
-                unbindView(view, configuration);
-            }
+        if (isValidConfiguration(configuration)) {
+            unbindView(view, configuration);
         }
     }
 
@@ -266,6 +263,10 @@ public abstract class DatabindingContext {
      * @param configuration IViewConfiguration to unbind.
      */
     public void unbindView(View view, ViewConfiguration configuration) {
+        if (!isValidConfiguration(configuration)) {
+            return;
+        }
+
         unbindView(view, configuration, false);
     }
 
@@ -288,52 +289,45 @@ public abstract class DatabindingContext {
         while (!queue.isEmpty()) {
             final ViewBindingPair binding = queue.poll();
 
-            if (binding == null) {
-                continue;
-            }
-
-            final ViewTag tag = getViewTag(view);
-            final IViewBinder binder = getDatabindingEntry(binding.configuration.getId()).binder;
-
-            if (binder != null) {
-                binder.unbindView(this, binding.configuration, binding.view);
-            }
-
-            if (tag != null) {
+            if (binding != null) {
+                final ViewTag tag = getViewTag(binding.view);
                 clickHandler.unsubscribeActions(tag.uuid);
-            }
 
-            if (remove) {
-                entries.remove(binding.configuration.getId());
-                tags.remove(view);
-            }
+                final IViewBinder binder = getDatabindingEntry(binding.configuration.getId()).binder;
+                binder.unbindView(this, binding.configuration, binding.view);
 
-            // Unbinding composite views
-            final ViewComposite composite = buildViewComposite(view);
+                if (remove) {
+                    entries.remove(binding.configuration.getId());
+                    tags.remove(view);
+                }
 
-            if (composite != null) {
+                // Unbinding composite views
+                final ViewComposite composite = buildViewComposite(view);
+
                 for (ViewConfiguration childConfiguration : binding.configuration.getChildrenConfigurations()) {
-                    final ViewComposite.ChildView childView = composite.getSubView(childConfiguration.getKey());
+                    final ViewComposite.ViewCompositeChild viewCompositeChild =
+                            composite.getSubView(childConfiguration.getKey());
 
-                    if (childView != null && childView.view != null) {
-                        queue.add(new ViewBindingPair(childView.view, childConfiguration));
+                    if (isValidCompositeChild(viewCompositeChild)
+                            && isValidConfiguration(childConfiguration)) {
+                        queue.add(new ViewBindingPair(viewCompositeChild.view, childConfiguration));
                     }
                 }
-            }
 
-            // Unbinding children that cannot be caught from composite
-            if (view instanceof ViewGroup) {
-                final ViewGroup viewGroup = (ViewGroup) view;
+                // Unbinding children that cannot be caught from composite
+                if (view instanceof ViewGroup) {
+                    final ViewGroup viewGroup = (ViewGroup) view;
 
-                for (int i = 0; i < viewGroup.getChildCount(); i++) {
-                    final View childView = viewGroup.getChildAt(i);
-                    final ViewTag childTag = getViewTag(view);
+                    for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                        final View childView = viewGroup.getChildAt(i);
+                        final ViewTag childTag = getViewTag(view);
 
-                    final ViewConfiguration childConfiguration =
-                            binding.configuration.getChildConfigurationById(childTag.configurationId);
+                        final ViewConfiguration childConfiguration =
+                                binding.configuration.getChildConfigurationById(childTag.configurationId);
 
-                    if (childView != null && childConfiguration != null) {
-                        queue.add(new ViewBindingPair(childView, childConfiguration));
+                        if (isValidView(childView) && isValidConfiguration(childConfiguration)) {
+                            queue.add(new ViewBindingPair(childView, childConfiguration));
+                        }
                     }
                 }
             }
@@ -362,7 +356,7 @@ public abstract class DatabindingContext {
      * @return ViewTag object if any.
      */
     public ViewTag getViewTag(View view) {
-        return tags.get(view);
+        return tags.get(view) != null ? tags.get(view) : ViewTag.emptyTag;
     }
 
     /**
@@ -384,7 +378,6 @@ public abstract class DatabindingContext {
      * @param id String id representing the IViewBinder
      * @return the IViewBinder associated with the provided id.
      */
-    @SuppressWarnings("unused")
     public IViewBinder getViewBinderById(String id) {
         return getDatabindingEntry(id).binder;
     }
@@ -398,18 +391,17 @@ public abstract class DatabindingContext {
      * @param <T>  Generic place-holder
      * @return First T IViewBinder implementation
      */
-    @SuppressWarnings("unused")
     public <T> T getParentViewBinderByClass(String id, Class<? extends T> type) {
         DatabindingEntry entry = getDatabindingEntry(id);
 
-        if (entry.configuration == null) {
+        if (!isValidConfiguration(entry.configuration)) {
             return null;
         }
 
         if (!entry.configuration.hasParent()) {
             final IViewBinder databinding = entry.binder;
 
-            if (databinding != null && type.isAssignableFrom(databinding.getClass())) {
+            if (isValidBinder(databinding) && type.isAssignableFrom(databinding.getClass())) {
                 return ObjectUtils.castObject(databinding, type);
             }
         }
@@ -419,7 +411,7 @@ public abstract class DatabindingContext {
         while (parent != null) {
             final IViewBinder databinding = getDatabindingEntry(parent.getId()).binder;
 
-            if (databinding != null && type.isAssignableFrom(databinding.getClass())) {
+            if (isValidBinder(databinding) && type.isAssignableFrom(databinding.getClass())) {
                 return ObjectUtils.castObject(databinding, type);
             }
 
@@ -446,7 +438,7 @@ public abstract class DatabindingContext {
      */
     public ViewConfiguration getLastRootViewConfiguration() {
         if (roots.isEmpty()) {
-            return null;
+            return emptyConfiguration;
         }
 
         final DatabindingEntry entry = entries.get(roots.get(roots.size() - 1));
@@ -455,7 +447,7 @@ public abstract class DatabindingContext {
             return entry.configuration;
         }
 
-        return null;
+        return emptyConfiguration;
     }
 
     /**
@@ -505,14 +497,18 @@ public abstract class DatabindingContext {
      */
     public ViewConfiguration buildViewConfigurationForObject(Object object) {
         if (object == null) {
-            return null;
+            return emptyConfiguration;
         }
 
         if (object instanceof ViewConfiguration) {
             return (ViewConfiguration) object;
         }
 
-        return viewConfigurationFactory.build(object);
+        try {
+            return viewConfigurationFactory.build(object);
+        } catch (RuntimeException e) {
+            return emptyConfiguration;
+        }
     }
 
     /**
@@ -532,11 +528,11 @@ public abstract class DatabindingContext {
         while (!configurations.isEmpty()) {
             final ViewConfiguration current = configurations.poll();
 
-            if (current != null && !entries.containsKey(current.getId())) {
-                createDatabindingEntry(current);
-            }
-
             if (current != null) {
+                if (!entries.containsKey(current.getId())) {
+                    createDatabindingEntry(current);
+                }
+
                 configurations.addAll(current.getChildrenConfigurations());
             }
         }
@@ -551,15 +547,11 @@ public abstract class DatabindingContext {
      * @return String representing the desired binder type.
      */
     private String getBinderType(ViewConfiguration configuration) {
-        String type;
-
-        if (configuration.getBinderType() != null) {
-            type = configuration.getBinderType();
-        } else {
-            type = configuration.getViewType();
+        if (isValidBinderType(configuration.getBinderType())) {
+            return configuration.getBinderType();
         }
 
-        return type;
+        return configuration.getViewType();
     }
 
     /**
@@ -588,7 +580,7 @@ public abstract class DatabindingContext {
             return entry;
         }
 
-        return DatabindingEntry.emptyEntry();
+        return DatabindingEntry.emptyEntry;
     }
 
     /**
@@ -612,22 +604,22 @@ public abstract class DatabindingContext {
     private ViewTag buildViewTag(View view, ViewConfiguration configuration) {
         ViewTag tag = getViewTag(view);
 
-        if (tag == null) {
-            if (configuration != null) {
+        if (!isValidTag(tag)) {
+            if (isValidConfiguration(configuration)) {
                 lastTag = lastTag + 1;
 
                 tag = new ViewTag(lastTag, configuration.getId());
                 tags.put(view, tag);
             }
 
-            if (configuration == null) {
+            if (!isValidConfiguration(configuration)) {
                 lastTag = lastTag + 1;
 
                 tag = new ViewTag(lastTag);
                 tags.put(view, tag);
             }
-        } else if (configuration != null) {
-            if (tag.configurationId == null) {
+        } else if (isValidConfiguration(configuration)) {
+            if (!isValidId(tag.configurationId)) {
                 tag.configurationId = configuration.getId();
             }
         }
@@ -671,11 +663,8 @@ public abstract class DatabindingContext {
             createDatabindingEntry(configuration);
         }
 
-        IViewBinder binder = getDatabindingEntry(configuration.getId()).binder;
-
-        if (binder != null) {
-            binder.bindView(this, configuration, view);
-        }
+        final IViewBinder binder = getDatabindingEntry(configuration.getId()).binder;
+        binder.bindView(this, configuration, view);
     }
 
     /**
@@ -689,7 +678,7 @@ public abstract class DatabindingContext {
             return viewBinderFactory.build(getBinderType(configuration));
         } catch (RuntimeException e) {
             DatabindingLogger.log(DatabindingLogger.Level.INFO, e.getMessage());
-            return null;
+            return emptyBinder;
         }
     }
 
@@ -707,21 +696,20 @@ public abstract class DatabindingContext {
 
         final ViewComposite compositeView = buildViewComposite(view);
 
-        if (compositeView != null) {
-            final List<ViewComposite.ChildView> childViews = compositeView.getSubViews();
+        final List<ViewComposite.ViewCompositeChild> viewCompositeChildren = compositeView.getSubViews();
 
-            for (ViewComposite.ChildView childView1: childViews) {
-                final String key = childView1.key;
-                final View childView = childView1.view;
+        for (ViewComposite.ViewCompositeChild viewCompositeChild : viewCompositeChildren) {
+            final String key = viewCompositeChild.key;
+            final View childView = viewCompositeChild.view;
 
-                if (childView != null && configuration.getChildConfigurationByKey(key) == null) {
-                    childView.setVisibility(VisibilityFallbackFactory
-                            .createVisibilityFallback(childView1.fallback));
-                    continue;
-                }
-
-                bindViewToConfiguration(childView, configuration.getChildConfigurationByKey(key));
+            if (isValidView(childView)
+                    && !isValidConfiguration(configuration.getChildConfigurationByKey(key))) {
+                childView.setVisibility(VisibilityFallbackFactory
+                        .createVisibilityFallback(viewCompositeChild.fallback));
+                continue;
             }
+
+            bindViewToConfiguration(childView, configuration.getChildConfigurationByKey(key));
         }
     }
 
@@ -735,8 +723,8 @@ public abstract class DatabindingContext {
     public void bindAction(View view, IViewAction action) {
         ViewTag tag = getViewTag(view);
 
-        if (tag == null) {
-            tag = buildViewTag(view, null);
+        if (!isValidTag(tag)) {
+            tag = buildViewTag(view, emptyConfiguration);
         }
 
         if (action != null) {
@@ -754,7 +742,11 @@ public abstract class DatabindingContext {
      * @return IViewComposite mapping.
      */
     private ViewComposite buildViewComposite(View view) {
-        return viewCompositeFactory.build(view);
+        try {
+            return viewCompositeFactory.build(view);
+        } catch (RuntimeException e) {
+            return emptyComposite;
+        }
     }
 
     /**
@@ -765,7 +757,11 @@ public abstract class DatabindingContext {
      * @return Android view.
      */
     public View buildView(Context context, String classType) {
-        return viewFactory.build(context, classType);
+        try {
+            return viewFactory.build(context, classType);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     /**
@@ -827,7 +823,7 @@ public abstract class DatabindingContext {
         public final Integer uuid;
         public String configurationId;
 
-        public Object data;
+        public final static ViewTag emptyTag = new ViewTag(-1, EMPTY_ID);
 
         public ViewTag(Integer uuid) {
             this.uuid = uuid;
@@ -838,12 +834,101 @@ public abstract class DatabindingContext {
             this.configurationId = configurationId;
         }
 
-        public ViewTag(Integer uuid, String configurationId, Object data) {
-            this.uuid = uuid;
-            this.configurationId = configurationId;
-            this.data = data;
-        }
+    }
 
+    /**
+     * Checks if the provided ViewTag is valid or an empty one.
+     *
+     * @param tag ViewTag tag to evaluate.
+     * @return boolean true if tag is valid, false otherwise.
+     */
+    @SuppressWarnings("all")
+    private static boolean isValidTag(ViewTag tag) {
+        return tag.uuid != -1;
+    }
+
+    /**
+     * Checks if the provided id is valid or an empty one.
+     *
+     * @param id String id evaluate.
+     * @return boolean true if id is valid, false otherwise.
+     */
+    public static boolean isValidId(String id) {
+        return id != null && !id.equals(EMPTY_ID);
+    }
+
+    /**
+     * Checks if the provided type is valid or an empty one.
+     *
+     * @param type String type evaluate.
+     * @return boolean true if type is valid, false otherwise.
+     */
+    private static boolean isValidBinderType(String type) {
+        return type != null && !type.equals(EMPTY_BINDER);
+    }
+
+    /**
+     * Checks if the provided IViewBinder is valid or an empty one.
+     *
+     * @param binder IViewBinder binder to evaluate.
+     * @return boolean true if binder is valid, false otherwise.
+     */
+    public static boolean isValidBinder(IViewBinder binder) {
+        return binder != null && !binder.equals(emptyBinder);
+    }
+
+    /**
+     * Checks if the provided ViewComposite is valid or an empty one.
+     *
+     * @param composite ViewComposite tag to evaluate.
+     * @return boolean true if composite is valid, false otherwise.
+     */
+    private static boolean isValidComposite(ViewComposite composite) {
+        return composite != null && !composite.equals(emptyComposite);
+    }
+
+    /**
+     * Checks if the provided ViewConfiguration is valid or an empty one.
+     *
+     * @param configuration ViewConfiguration tag to evaluate.
+     * @return boolean true if configuration is valid, false otherwise.
+     */
+    public static boolean isValidConfiguration(ViewConfiguration configuration) {
+        return configuration != null
+                && !configuration.equals(emptyConfiguration)
+                && isValidId(configuration.getId());
+    }
+
+    /**
+     * Checks if the provided DatabindingEntry is valid or an empty one.
+     *
+     * @param entry DatabindingEntry tag to evaluate.
+     * @return boolean true if entry is valid, false otherwise.
+     */
+    private static boolean isValidEntry(DatabindingEntry entry) {
+        return entry != null
+                && isValidConfiguration(entry.configuration)
+                && isValidId(entry.configuration.getId());
+    }
+
+    /**
+     * Checks if the provided View is valid or an empty one.
+     *
+     * @param view Android view to evaluate.
+     * @return boolean true if view is valid, false otherwise.
+     */
+    public boolean isValidView(View view) {
+        return view != null;
+    }
+
+    /**
+     * Checks if the provided ViewCompositeChild is valid or an empty one.
+     *
+     * @param compositeChild ViewCompositeChild and his view to evaluate.
+     * @return boolean true if compositeChild is valid, false otherwise.
+     */
+    private boolean isValidCompositeChild(ViewComposite.ViewCompositeChild compositeChild) {
+        return compositeChild != null && compositeChild.view != null;
     }
 
     /**
@@ -859,18 +944,20 @@ public abstract class DatabindingContext {
         final IViewBinder binder;
 
         /**
+         * Empty entry default.
+         */
+        private final static DatabindingEntry emptyEntry =
+                new DatabindingEntry(emptyConfiguration, emptyBinder);
+
+        /**
          * Default constructor to create an entry in this context.
          *
          * @param binder IViewBinder: is the binding. Can be null if the view is only a container.
          * @param configuration ViewConfiguration associated to this binding.
          */
-        DatabindingEntry(ViewConfiguration configuration, IViewBinder binder) {
+        private DatabindingEntry(ViewConfiguration configuration, IViewBinder binder) {
             this.configuration = configuration;
             this.binder = binder;
-        }
-
-        static DatabindingEntry emptyEntry() {
-            return new DatabindingEntry(null, null);
         }
 
         @Override
@@ -882,6 +969,36 @@ public abstract class DatabindingContext {
             return super.equals(obj);
         }
     }
+
+    /**
+     * Instance field represents an empty IViewBinder as default.
+     */
+    public final static IViewBinder emptyBinder = new IViewBinder() {
+        @Override
+        public void bindView(DatabindingContext databindingContext, ViewConfiguration configuration, View view) {
+
+        }
+
+        @Override
+        public void unbindView(DatabindingContext databindingContext, ViewConfiguration configuration, View view) {
+
+        }
+
+        @Override
+        public void removeView(DatabindingContext databindingContext, ViewConfiguration configuration) {
+
+        }
+    };
+
+    /**
+     * Instance field represents an empty ViewComposite as default.
+     */
+    public final static ViewComposite emptyComposite = new ViewComposite();
+
+    /**
+     * Instance field represents an empty ViewConfiguration as default.
+     */
+    public final static ViewConfiguration emptyConfiguration = new ViewConfiguration(EMPTY_ID, EMPTY_VIEW, EMPTY_BINDER);
 
 }
 
