@@ -335,11 +335,13 @@ public abstract class DatabindingContext {
                         final View childView = viewGroup.getChildAt(i);
                         final ViewTag childTag = getViewTag(childView);
 
-                        final ViewConfiguration childConfiguration =
-                                viewConfiguration.getChildConfigurationById(childTag.configurationId);
+                        if (childTag != null) {
+                            final ViewConfiguration childConfiguration =
+                                    viewConfiguration.getChildConfigurationById(childTag.configurationId);
 
-                        if (childView != null && childConfiguration != null) {
-                            queue.add(new ViewBindingPair(childView, childConfiguration));
+                            if (childView != null && childConfiguration != null) {
+                                queue.add(new ViewBindingPair(childView, childConfiguration));
+                            }
                         }
                     }
                 }

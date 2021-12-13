@@ -142,7 +142,7 @@ public class ViewConfigurationFactoryProcessor {
                 }
 
                 if (map.containsKey(className)) {
-                    map.get(className).uiFields.add(new ConfigurationList(fieldName, key));
+                    map.get(className).uiFields.add(new ConfigurationList(key, fieldName));
                 }
             }
         }

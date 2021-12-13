@@ -1,5 +1,6 @@
 package com.uidroid.processor.configuration;
 
+import static com.uidroid.processor.Utils.capitalize;
 import static com.uidroid.processor.Utils.getCodeParams;
 import static com.uidroid.processor.Utils.getCodeString;
 
@@ -32,7 +33,7 @@ public class ConfigurationObject implements UIField {
 
     @Override
     public void printCode(PrintWriter out) {
-        final String variableName = "config" + fieldName;
+        final String variableName = "config" + capitalize(fieldName);
 
         final String idCode = id != null && !id.equals("") ? getCodeString(id) : "String.valueOf(value." + fieldName + ".hashCode())";
         final String binderCode = binder == null ? "null" : getCodeString(binder);
