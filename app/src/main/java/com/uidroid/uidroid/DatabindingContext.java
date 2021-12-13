@@ -247,15 +247,17 @@ public abstract class DatabindingContext {
      * @param view Android view which has been binded as root.
      */
     public void unbindView(View view) {
+        if (view == null) {
+            DatabindingLogger.log(DatabindingLogger.Level.INFO, "Cannot unbind null view");
+            return;
+        }
+
         final ViewTag tag = getViewTag(view);
 
         if (tag != null) {
             final ViewConfiguration configuration =
                     getDatabindingEntry(tag.configurationId).configuration;
-
-            if (configuration != null) {
-                unbindView(view, configuration);
-            }
+            unbindView(view, configuration);
         }
     }
 
@@ -266,6 +268,11 @@ public abstract class DatabindingContext {
      * @param configuration IViewConfiguration to unbind.
      */
     public void unbindView(View view, ViewConfiguration configuration) {
+        if (isInvalidViewConfiguration(view, configuration)) {
+            DatabindingLogger.log(DatabindingLogger.Level.INFO, "Cannot unbind null objects");
+            return;
+        }
+
         unbindView(view, configuration, false);
     }
 
@@ -288,52 +295,52 @@ public abstract class DatabindingContext {
         while (!queue.isEmpty()) {
             final ViewBindingPair binding = queue.poll();
 
-            if (binding == null) {
-                continue;
-            }
+            if (binding != null) {
+                final ViewTag tag = getViewTag(binding.view);
+                final IViewBinder binder = getDatabindingEntry(binding.configuration.getId()).binder;
 
-            final ViewTag tag = getViewTag(view);
-            final IViewBinder binder = getDatabindingEntry(binding.configuration.getId()).binder;
+                if (binder != null) {
+                    binder.unbindView(this, binding.configuration, binding.view);
+                }
 
-            if (binder != null) {
-                binder.unbindView(this, binding.configuration, binding.view);
-            }
+                if (tag != null) {
+                    clickHandler.unsubscribeActions(tag.uuid);
+                }
 
-            if (tag != null) {
-                clickHandler.unsubscribeActions(tag.uuid);
-            }
+                if (remove) {
+                    entries.remove(binding.configuration.getId());
+                    tags.remove(binding.view);
+                }
 
-            if (remove) {
-                entries.remove(binding.configuration.getId());
-                tags.remove(view);
-            }
+                // Unbinding viewComposite views
+                final ViewComposite viewComposite = buildViewComposite(binding.view);
+                final ViewConfiguration viewConfiguration = binding.configuration;
 
-            // Unbinding composite views
-            final ViewComposite composite = buildViewComposite(view);
+                if (viewComposite != null) {
+                    for (ViewConfiguration childConfiguration : viewConfiguration.getChildrenConfigurations()) {
+                        final ViewComposite.ViewCompositeChild viewCompositeChild =
+                                viewComposite.getSubView(childConfiguration.getKey());
 
-            if (composite != null) {
-                for (ViewConfiguration childConfiguration : binding.configuration.getChildrenConfigurations()) {
-                    final ViewComposite.ViewCompositeChild viewCompositeChild = composite.getSubView(childConfiguration.getKey());
-
-                    if (viewCompositeChild != null && viewCompositeChild.view != null) {
-                        queue.add(new ViewBindingPair(viewCompositeChild.view, childConfiguration));
+                        if (viewCompositeChild != null && viewCompositeChild.view != null) {
+                            queue.add(new ViewBindingPair(viewCompositeChild.view, childConfiguration));
+                        }
                     }
                 }
-            }
 
-            // Unbinding children that cannot be caught from composite
-            if (view instanceof ViewGroup) {
-                final ViewGroup viewGroup = (ViewGroup) view;
+                // Unbinding children that cannot be caught from viewComposite
+                if (binding.view instanceof ViewGroup) {
+                    final ViewGroup viewGroup = (ViewGroup) binding.view;
 
-                for (int i = 0; i < viewGroup.getChildCount(); i++) {
-                    final View childView = viewGroup.getChildAt(i);
-                    final ViewTag childTag = getViewTag(view);
+                    for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                        final View childView = viewGroup.getChildAt(i);
+                        final ViewTag childTag = getViewTag(childView);
 
-                    final ViewConfiguration childConfiguration =
-                            binding.configuration.getChildConfigurationById(childTag.configurationId);
+                        final ViewConfiguration childConfiguration =
+                                viewConfiguration.getChildConfigurationById(childTag.configurationId);
 
-                    if (childView != null && childConfiguration != null) {
-                        queue.add(new ViewBindingPair(childView, childConfiguration));
+                        if (childView != null && childConfiguration != null) {
+                            queue.add(new ViewBindingPair(childView, childConfiguration));
+                        }
                     }
                 }
             }
@@ -384,7 +391,6 @@ public abstract class DatabindingContext {
      * @param id String id representing the IViewBinder
      * @return the IViewBinder associated with the provided id.
      */
-    @SuppressWarnings("unused")
     public IViewBinder getViewBinderById(String id) {
         return getDatabindingEntry(id).binder;
     }
@@ -398,29 +404,28 @@ public abstract class DatabindingContext {
      * @param <T>  Generic place-holder
      * @return First T IViewBinder implementation
      */
-    @SuppressWarnings("unused")
     public <T> T getParentViewBinderByClass(String id, Class<? extends T> type) {
-        DatabindingEntry entry = getDatabindingEntry(id);
+        final DatabindingEntry entry = getDatabindingEntry(id);
 
         if (entry.configuration == null) {
             return null;
         }
 
         if (!entry.configuration.hasParent()) {
-            final IViewBinder databinding = entry.binder;
+            final IViewBinder binder = entry.binder;
 
-            if (databinding != null && type.isAssignableFrom(databinding.getClass())) {
-                return ObjectUtils.castObject(databinding, type);
+            if (binder != null && type.isAssignableFrom(binder.getClass())) {
+                return ObjectUtils.castObject(binder, type);
             }
         }
 
         ViewConfiguration parent = entry.configuration.getParentConfiguration();
 
         while (parent != null) {
-            final IViewBinder databinding = getDatabindingEntry(parent.getId()).binder;
+            final IViewBinder binder = getDatabindingEntry(parent.getId()).binder;
 
-            if (databinding != null && type.isAssignableFrom(databinding.getClass())) {
-                return ObjectUtils.castObject(databinding, type);
+            if (binder != null && type.isAssignableFrom(binder.getClass())) {
+                return ObjectUtils.castObject(binder, type);
             }
 
             parent = parent.getParentConfiguration();
@@ -474,7 +479,7 @@ public abstract class DatabindingContext {
      * @param listener Object
      * @param id String
      */
-    @SuppressWarnings({"unchecked", "unused"})
+    @SuppressWarnings("unchecked")
     public synchronized <T> void subscribeListenerToBinding(T listener, String id) {
         ListenerViewBinder<View, T> binder = getViewBinderById(id, ListenerViewBinder.class);
 
@@ -488,7 +493,7 @@ public abstract class DatabindingContext {
      *
      * @param id String id of binding.
      */
-    @SuppressWarnings({"unchecked", "unused"})
+    @SuppressWarnings("unchecked")
     public synchronized  <T> void unsubscribeListenerFromBinding(String id) {
         ListenerViewBinder<View, T> binder = getViewBinderById(id, ListenerViewBinder.class);
 
@@ -584,7 +589,7 @@ public abstract class DatabindingContext {
             return entry;
         }
 
-        return DatabindingEntry.emptyEntry();
+        return emptyEntry;
     }
 
     /**
@@ -667,7 +672,7 @@ public abstract class DatabindingContext {
             createDatabindingEntry(configuration);
         }
 
-        IViewBinder binder = getDatabindingEntry(configuration.getId()).binder;
+        final IViewBinder binder = getDatabindingEntry(configuration.getId()).binder;
 
         if (binder != null) {
             binder.bindView(this, configuration, view);
@@ -706,13 +711,13 @@ public abstract class DatabindingContext {
         if (compositeView != null) {
             final List<ViewComposite.ViewCompositeChild> viewCompositeChildren = compositeView.getSubViews();
 
-            for (ViewComposite.ViewCompositeChild viewCompositeChild1 : viewCompositeChildren) {
-                final String key = viewCompositeChild1.key;
-                final View childView = viewCompositeChild1.view;
+            for (ViewComposite.ViewCompositeChild viewCompositeChild : viewCompositeChildren) {
+                final String key = viewCompositeChild.key;
+                final View childView = viewCompositeChild.view;
 
                 if (childView != null && configuration.getChildConfigurationByKey(key) == null) {
                     childView.setVisibility(VisibilityFallbackFactory
-                            .createVisibilityFallback(viewCompositeChild1.fallback));
+                            .createVisibilityFallback(viewCompositeChild.fallback));
                     continue;
                 }
 
@@ -843,6 +848,11 @@ public abstract class DatabindingContext {
     }
 
     /**
+     * Empty DatabindingEntry entry for providing a default when needed.
+     */
+    private final static DatabindingEntry emptyEntry = new DatabindingEntry(null, null);
+
+    /**
      * Class which represents the binding of a configuration to his view. It contains the binder
      * itself, and the path specific to the parent hierarchy of this binding. It's easy to maintain
      * and improve the algorithms and data structures of the DatabindingContext thought this object,
@@ -851,8 +861,8 @@ public abstract class DatabindingContext {
      */
     private final static class DatabindingEntry {
 
-        final ViewConfiguration configuration;
-        final IViewBinder binder;
+        private final ViewConfiguration configuration;
+        private final IViewBinder binder;
 
         /**
          * Default constructor to create an entry in this context.
@@ -863,10 +873,6 @@ public abstract class DatabindingContext {
         private DatabindingEntry(ViewConfiguration configuration, IViewBinder binder) {
             this.configuration = configuration;
             this.binder = binder;
-        }
-
-        private static DatabindingEntry emptyEntry() {
-            return new DatabindingEntry(null, null);
         }
 
         @Override

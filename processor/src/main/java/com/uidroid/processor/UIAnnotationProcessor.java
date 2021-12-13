@@ -1,6 +1,7 @@
 package com.uidroid.processor;
 
 import com.uidroid.annotation.UI;
+import com.uidroid.processor.configuration.ViewConfigurationFactoryProcessor;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

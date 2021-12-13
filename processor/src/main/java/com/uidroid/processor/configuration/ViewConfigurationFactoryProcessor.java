@@ -1,4 +1,4 @@
-package com.uidroid.processor;
+package com.uidroid.processor.configuration;
 
 import static com.uidroid.processor.Utils.getCodeParams;
 import static com.uidroid.processor.Utils.getCodeString;
@@ -8,9 +8,7 @@ import com.uidroid.annotation.UI;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,14 +30,6 @@ public class ViewConfigurationFactoryProcessor {
     private final Messager messager;
     private final ProcessingEnvironment processingEnvironment;
 
-    private enum FieldToConfigurationElementType {
-        OBJECT,
-        ELEMENT,
-        ELEMENT_LIST,
-        PARAMETER,
-        ACTION
-    }
-
     public ViewConfigurationFactoryProcessor(ProcessingEnvironment processingEnv) {
         this.processingEnvironment = processingEnv;
         this.filer = processingEnv.getFiler();
@@ -51,7 +41,7 @@ public class ViewConfigurationFactoryProcessor {
             return;
         }
 
-        final Map<String, Configuration> map = new LinkedHashMap<>();
+        final Map<String, ConfigurationObject> map = new LinkedHashMap<>();
 
         for (Element annotatedElement : roundEnvironment.getElementsAnnotatedWith(UI.ViewConfiguration.class)) {
             if (annotatedElement.getKind() != ElementKind.CLASS) {
@@ -65,7 +55,7 @@ public class ViewConfigurationFactoryProcessor {
                 String clazz = annotatedElement.asType().toString();
 
                 if (!map.containsKey(clazz)) {
-                    map.put(clazz, new Configuration());
+                    map.put(clazz, new ConfigurationObject());
                 }
                 map.get(clazz).viewType = getViewClass(item);
 
@@ -76,7 +66,7 @@ public class ViewConfigurationFactoryProcessor {
 
                 UI.StableParam[] params = item.params();
                 for (UI.StableParam param: params) {
-                    map.get(clazz).params.add(new StableParam(param.key(), param.value()));
+                    map.get(clazz).uiFields.add(new StableParameter(param.key(), param.value()));
                 }
             }
         }
@@ -101,8 +91,7 @@ public class ViewConfigurationFactoryProcessor {
                 }
 
                 if (map.containsKey(className)) {
-                    map.get(className).childConfigurationElements.add(
-                            new ChildConfigurationElement(fieldName, FieldToConfigurationElementType.ELEMENT, key));
+                    map.get(className).uiFields.add(new Configuration(fieldName, key));
                 }
             }
         }
@@ -127,7 +116,7 @@ public class ViewConfigurationFactoryProcessor {
                 }
 
                 if (map.containsKey(className)) {
-                    map.get(className).childConfigurationElements.add(new ChildConfigurationElement(fieldName, FieldToConfigurationElementType.PARAMETER, key));
+                    map.get(className).uiFields.add(new Parameter(fieldName, key));
                 }
             }
         }
@@ -153,8 +142,7 @@ public class ViewConfigurationFactoryProcessor {
                 }
 
                 if (map.containsKey(className)) {
-                    map.get(className).childConfigurationElements.add(
-                            new ChildConfigurationElement(fieldName, FieldToConfigurationElementType.ELEMENT_LIST, key));
+                    map.get(className).uiFields.add(new ConfigurationList(fieldName, key));
                 }
             }
         }
@@ -174,8 +162,7 @@ public class ViewConfigurationFactoryProcessor {
                 String className = ((TypeElement) annotatedElement.getEnclosingElement()).getQualifiedName().toString();
 
                 if (map.containsKey(className)) {
-                    map.get(className).childConfigurationElements.add(
-                            new ChildConfigurationElement(fieldName, FieldToConfigurationElementType.ACTION, null));
+                    map.get(className).uiFields.add(new Action(fieldName));
                 }
             }
         }
@@ -226,18 +213,18 @@ public class ViewConfigurationFactoryProcessor {
                 UI.BindWith binder = variable.getAnnotation(UI.BindWith.class);
 
                 if (map.containsKey(className)) {
-                    ChildConfigurationElement childConfigurationElement =
-                            new ChildConfigurationElement(fieldName, FieldToConfigurationElementType.OBJECT, key, viewClass, id);
+                    ConfigurationObject configuration =
+                            new ConfigurationObject(viewClass, null, id, fieldName, key);
 
                     if (binder != null) {
-                        childConfigurationElement.binder = getBinderClass(binder);
+                        configuration.binder = getBinderClass(binder);
                     }
 
                     for (UI.StableParam param: params) {
-                        childConfigurationElement.params.add(new StableParam(param.key(), param.value()));
+                        configuration.uiFields.add(new StableParameter(param.key(), param.value()));
                     }
 
-                    map.get(className).childConfigurationElements.add(childConfigurationElement);
+                    map.get(className).uiFields.add(configuration);
                 }
             }
         }
@@ -249,7 +236,7 @@ public class ViewConfigurationFactoryProcessor {
         }
     }
 
-    private void write(Map<String, Configuration> map) throws IOException {
+    private void write(Map<String, ConfigurationObject> map) throws IOException {
         String packageName;
         int lastDot = "com.uidroid.uidroid.factory.ViewConfigurationFactory".lastIndexOf('.');
         packageName = "com.uidroid.uidroid.factory.ViewConfigurationFactory".substring(0, lastDot);
@@ -276,6 +263,8 @@ public class ViewConfigurationFactoryProcessor {
 
             // class
             out.print("public final class " + simpleClassName + " implements IViewConfigurationFactory { \n\n");
+
+            // main method
             out.print("  public ViewConfiguration build(Object object) { \n");
             out.print("    switch(object.getClass().getCanonicalName()) { \n");
             map.forEach((objectView, value) -> {
@@ -288,175 +277,39 @@ public class ViewConfigurationFactoryProcessor {
             out.print("  } \n\n");
 
             // methods
-            map.forEach((key, configuration) -> {
-                String objectView = getSimpleName(key);
-
-                out.print("  public ViewConfiguration build(" + objectView + " value) { \n");
+            map.forEach((key, configurationObject) -> {
+                out.print("  public ViewConfiguration build(" + getSimpleName(key) + " value) { \n");
                 out.print("    if (value == null) { \n");
                 out.print("      return null; \n");
                 out.print("    } \n");
+                out.print("    " + getIdCodeString(configurationObject.id) + " \n");
+                out.print("    ViewConfiguration object = new ViewConfiguration("
+                        + getCodeParams("id", getCodeString(configurationObject.viewType), getBinderCodeString(configurationObject.binder))
+                        + "); \n");
 
-                // Construct the ViewConfiguration instance
-                String idField = configuration.id;
-                String viewType = configuration.viewType;
-                if (configuration.binder == null) {
-                    if (idField != null) {
-                        out.print("    String id = value." + idField
-                                + " != null ? value." + idField
-                                + " : String.valueOf(value.hashCode()); \n");
-                        out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("id", getCodeString(viewType), getCodeString("emptyBinder"))
-                                + "); \n");
-                    } else {
-                        out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("String.valueOf(value.hashCode())", getCodeString(viewType), getCodeString("emptyBinder"))
-                                + "); \n");
-                    }
-                } else {
-                    String binderType = configuration.binder;
-                    if (configuration.id != null) {
-                        out.print("    String id = value." + idField + " != null ? value." + idField
-                                + " : String.valueOf(value.hashCode()); \n");
-                        out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("id", getCodeString(viewType), getCodeString(binderType))
-                                + "); \n");
-                    } else {
-                        out.print("    ViewConfiguration object = new ViewConfiguration("
-                                + getCodeParams("String.valueOf(value.hashCode())", getCodeString(viewType), getCodeString(binderType))
-                                + "); \n");
-                    }
-                }
-
-                int i = 1; // for multiple simple objects method
-                for (ChildConfigurationElement element : configuration.childConfigurationElements) {
-                    if (element.type.equals(FieldToConfigurationElementType.ACTION)) {
-                        out.println("    object.setAction(value." + element.fieldName + ");");
-                        continue;
-                    }
-
-                    if (element.type.equals(FieldToConfigurationElementType.ELEMENT_LIST)) {
-                        out.println("    this.bulk(" + getCodeParams("object",
-                                getCodeString(element.key),
-                                "new ArrayList<Object>(value." + element.fieldName)
-                                + "));");
-                        continue;
-                    }
-
-                    if (element.type.equals(FieldToConfigurationElementType.ELEMENT)) {
-                        String child = "this.build(value." + element.fieldName + ")";
-                        out.print("    object.addChildConfiguration("
-                                + getCodeParams(getCodeString(element.key), child)
-                                + "); \n");
-                        continue;
-                    }
-
-                    if (element.type.equals(FieldToConfigurationElementType.PARAMETER)) {
-                        String child = "value." + element.fieldName;
-                        out.print("    object.putParam("
-                                + getCodeParams(getCodeString(element.key), child)
-                                + "); \n");
-                        continue;
-                    }
-                    // Simple configurations
-                    if (element.type.equals(FieldToConfigurationElementType.OBJECT)) {
-                        String idCode = !element.id.equals("") ? getCodeString(element.id)
-                                : "String.valueOf(value." + element.fieldName + ".hashCode())";
-                        String binderCode = element.binder == null ? "null" : getCodeString(element.binder);
-
-                        out.print("    ViewConfiguration config" + i + " = new ViewConfiguration("
-                                + getCodeParams(idCode, getCodeString(element.viewClass), binderCode)
-                                + "); \n");
-                        out.print("    config" + i + ".putParam("
-                                + getCodeString(element.key) + ", value." + element.fieldName
-                                + "); \n");
-                        for (StableParam param: element.params) {
-                            out.print("    config" + i + ".putParam("
-                                    + getCodeString(param.key) + ", " + getCodeString(param.value)
-                                    + "); \n");
-                        }
-                        out.print("    object.addChildConfiguration("
-                                + getCodeParams(getCodeString(element.key), "config" + i)
-                                + "); \n");
-                        i++;
-                    }
-                }
-
-                // Stable params
-                for (StableParam param: configuration.params) {
-                    out.print("    object.putParam("
-                            + getCodeParams(getCodeString(param.key), getCodeString(param.value))
-                            + "); \n");
+                for (UIField uiField : configurationObject.uiFields) {
+                    uiField.printCode(out);
                 }
 
                 out.print("    return object; \n");
                 out.print("  } \n\n");
             });
-
-            out.println("  private void bulk(ViewConfiguration parent, String key, List<Object> objects) { \n" +
-                    "    for (Object object: objects) { \n" +
-                    "      parent.addChildConfiguration(key, this.build(object)); \n" +
-                    "    } \n" +
-                    "  }; \n");
-            out.println("}");
+            out.print("}");
         }
     }
 
-    static class Configuration {
-        public String binder;
-        public String viewType;
-        public String id;
-
-        public List<ChildConfigurationElement> childConfigurationElements = new ArrayList<>();
-        public List<StableParam> params = new ArrayList<>();
-    }
-
-    static class StableParam {
-
-        public String value;
-        public String key;
-
-        public StableParam(String key, String value) {
-            this.value = value;
-            this.key = key;
+    private static String getIdCodeString(String idField) {
+        if (idField != null) {
+            return "final String id = value."
+                    + idField + " != null ? value."
+                    + idField + " : String.valueOf(value.hashCode());";
+        } else {
+            return "final String id = String.valueOf(value.hashCode());";
         }
     }
 
-    static class ChildConfigurationElement { // can also represents a param
-
-        public FieldToConfigurationElementType type;
-
-        public String fieldName;
-        public String key;
-
-        // for simple objects view elements
-        public String viewClass;
-        public String id;
-        public String binder;
-        public List<StableParam> params = new ArrayList<>();
-
-        public ChildConfigurationElement(
-                String fieldName,
-                FieldToConfigurationElementType type,
-                String key) {
-            this.fieldName = fieldName;
-            this.type = type;
-            this.key = key;
-        }
-
-        public ChildConfigurationElement(
-                String fieldName,
-                FieldToConfigurationElementType type,
-                String key,
-                String viewClass,
-                String id) {
-            this.fieldName = fieldName;
-            this.type = type;
-            this.key = key;
-
-            this.viewClass = viewClass;
-            this.id = id;
-        }
-
+    private static String getBinderCodeString(String binderType) {
+        return binderType != null ? getCodeString(binderType) : "null";
     }
 
     private String getBinderClass(UI.BindWith annotation) {
@@ -493,4 +346,5 @@ public class ViewConfigurationFactoryProcessor {
     private void error(String message) {
         messager.printMessage(Diagnostic.Kind.ERROR, message);
     }
+
 }
