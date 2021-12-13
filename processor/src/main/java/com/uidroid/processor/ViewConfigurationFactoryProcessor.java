@@ -283,7 +283,7 @@ public class ViewConfigurationFactoryProcessor {
                 out.print("        return this.build((" + getSimpleName(objectView) + ") object); \n");
             });
             out.print("      default: \n");
-            out.print("         throw new RuntimeException(\"Cannot create configuration\"); \n");
+            out.print("         return null; \n");
             out.print("    } \n");
             out.print("  } \n\n");
 

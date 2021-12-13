@@ -12,7 +12,6 @@ public final class ViewComposite {
     private final Map<String, ViewCompositeChild> mapping = new LinkedHashMap<>();
 
     public static class ViewCompositeChild {
-
         public String key;
         public View view;
         public int fallback;
