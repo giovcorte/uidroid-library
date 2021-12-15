@@ -1,6 +1,4 @@
-package com.uidroid.processor;
-
-import static com.uidroid.processor.Utils.capitalize;
+package com.uidroid.processor.configuration;
 
 import com.uidroid.annotation.UI;
 
@@ -20,11 +18,11 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.tools.JavaFileObject;
 
-public class ConfigurationBuilderProcessor {
+public class ViewConfigurationBuilderProcessor {
 
     private final Filer filer;
 
-    public ConfigurationBuilderProcessor(ProcessingEnvironment processingEnv) {
+    public ViewConfigurationBuilderProcessor(ProcessingEnvironment processingEnv) {
         filer = processingEnv.getFiler();
     }
 

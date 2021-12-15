@@ -4,6 +4,6 @@ import java.io.PrintWriter;
 
 public interface UIField {
 
-    void printCode(PrintWriter out);
+    void printAddToConfigurationCode(PrintWriter out);
 
 }

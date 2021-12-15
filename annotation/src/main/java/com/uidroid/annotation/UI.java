@@ -15,7 +15,7 @@ public @interface UI {
         Class<?> view();
         StableParam[] params() default {};
     }
-
+    
     @Retention(RetentionPolicy.SOURCE)
     @Target(ElementType.FIELD)
     @interface FieldConfiguration {

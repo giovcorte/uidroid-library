@@ -1,7 +1,12 @@
 package com.uidroid.processor;
 
 import com.uidroid.annotation.UI;
+import com.uidroid.processor.binder.ViewBinderFactoryProcessor;
+import com.uidroid.processor.composite.ViewCompositeFactoryProcessor;
+import com.uidroid.processor.composite.ViewFieldsInjectorProcessor;
+import com.uidroid.processor.configuration.ViewConfigurationBuilderProcessor;
 import com.uidroid.processor.configuration.ViewConfigurationFactoryProcessor;
+import com.uidroid.processor.view.ViewFactoryProcessor;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -31,7 +36,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
         ViewCompositeFactoryProcessor compositeFactoryProcessor = new ViewCompositeFactoryProcessor(processingEnv);
         DatabindingProvidersProcessor databindingProvidersProcessor = new DatabindingProvidersProcessor(processingEnv);
         ViewFieldsInjectorProcessor viewFieldsInjectorProcessor = new ViewFieldsInjectorProcessor(processingEnv);
-        ConfigurationBuilderProcessor configurationBuilderProcessor = new ConfigurationBuilderProcessor(processingEnv);
+        ViewConfigurationBuilderProcessor viewConfigurationBuilderProcessor = new ViewConfigurationBuilderProcessor(processingEnv);
 
         binderFactoryProcessor.process(set, roundEnvironment);
         configurationFactoryProcessor.process(set, roundEnvironment);
@@ -39,7 +44,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
         compositeFactoryProcessor.process(set, roundEnvironment);
         databindingProvidersProcessor.process(set, roundEnvironment);
         viewFieldsInjectorProcessor.process(set, roundEnvironment);
-        configurationBuilderProcessor.process(set, roundEnvironment);
+        viewConfigurationBuilderProcessor.process(set, roundEnvironment);
 
         return true;
     }

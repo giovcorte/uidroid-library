@@ -1,4 +1,4 @@
-package com.uidroid.processor;
+package com.uidroid.processor.view;
 
 import static com.uidroid.processor.Utils.getCodeString;
 import static com.uidroid.processor.Utils.getSimpleName;

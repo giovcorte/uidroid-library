@@ -16,6 +16,10 @@ public final class Utils {
     }
 
     public static String getCodeString(String s) {
+        if (s == null) {
+            return "null";
+        }
+
         return "\"" + s + "\"";
     }
 

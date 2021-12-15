@@ -8,39 +8,54 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConfigurationObject implements UIField {
+/**
+ * Class representing an ViewConfiguration annotated object or a field annotated with FieldConfiguration.
+ */
+class ConfigurationObject implements UIField {
 
-    String binder;
+    String binderType;
     String viewType;
     String id;
 
     String fieldName;
     String key;
 
-    public List<UIField> uiFields = new ArrayList<>();
+    List<UIField> uiFields = new ArrayList<>();
 
-    public ConfigurationObject() {
+    ConfigurationObject() {
 
     }
 
-    public ConfigurationObject(String viewType, String binder, String id, String fieldName, String key) {
+    ConfigurationObject(String viewType, String binderType, String id, String fieldName, String key) {
         this.viewType = viewType;
-        this.binder = binder;
+        this.binderType = binderType;
         this.id = id;
         this.fieldName = fieldName;
         this.key = key;
     }
 
+    public void printConstructorCode(PrintWriter out) {
+        if (id != null) {
+            out.print("    final String id = value." + id + " != null ? value." + id + " : String.valueOf(value.hashCode()); \n");
+        } else {
+            out.print("    final String id = String.valueOf(value.hashCode()); \n");
+        }
+        out.print("    ViewConfiguration object = new ViewConfiguration("
+                + getCodeParams("id", getCodeString(viewType), binderType != null ? getCodeString(binderType) : "null")
+                + "); \n");
+    }
+
     @Override
-    public void printCode(PrintWriter out) {
+    public void printAddToConfigurationCode(PrintWriter out) {
         final String variableName = "config" + capitalize(fieldName);
 
         final String idCode = id != null && !id.equals("") ? getCodeString(id) : "String.valueOf(value." + fieldName + ".hashCode())";
-        final String binderCode = binder == null ? "null" : getCodeString(binder);
+        final String binderCode = binderType == null ? "null" : getCodeString(binderType);
 
         out.print("    ViewConfiguration " + variableName + " = new ViewConfiguration("
                 + getCodeParams(idCode, getCodeString(viewType), binderCode)
                 + "); \n");
+
         out.print("    " + variableName + ".putParam("
                 + getCodeString(key) + ", value." + fieldName
                 + "); \n");
@@ -56,6 +71,10 @@ public class ConfigurationObject implements UIField {
         out.print("    object.addChildConfiguration("
                 + getCodeParams(getCodeString(key), variableName)
                 + "); \n");
+    }
+
+    public void printReturnCode(PrintWriter out) {
+        out.print("    return object; \n");
     }
 
 }

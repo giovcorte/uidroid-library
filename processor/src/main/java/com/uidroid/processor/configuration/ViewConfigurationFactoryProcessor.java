@@ -1,6 +1,5 @@
 package com.uidroid.processor.configuration;
 
-import static com.uidroid.processor.Utils.getCodeParams;
 import static com.uidroid.processor.Utils.getCodeString;
 import static com.uidroid.processor.Utils.getSimpleName;
 
@@ -45,7 +44,7 @@ public class ViewConfigurationFactoryProcessor {
 
         for (Element annotatedElement : roundEnvironment.getElementsAnnotatedWith(UI.ViewConfiguration.class)) {
             if (annotatedElement.getKind() != ElementKind.CLASS) {
-                error("Only class can be annotated with UI.ViewConfiguration", annotatedElement);
+                error("Only classes can be annotated with UI.ViewConfiguration", annotatedElement);
                 continue;
             }
 
@@ -61,7 +60,7 @@ public class ViewConfigurationFactoryProcessor {
 
                 UI.BindWith binder = annotatedElement.getAnnotation(UI.BindWith.class);
                 if (binder != null) {
-                    map.get(clazz).binder = getBinderClass(binder);
+                    map.get(clazz).binderType = getBinderClass(binder);
                 }
 
                 UI.StableParam[] params = item.params();
@@ -217,7 +216,7 @@ public class ViewConfigurationFactoryProcessor {
                             new ConfigurationObject(viewClass, null, id, fieldName, key);
 
                     if (binder != null) {
-                        configuration.binder = getBinderClass(binder);
+                        configuration.binderType = getBinderClass(binder);
                     }
 
                     for (UI.StableParam param: params) {
@@ -264,52 +263,37 @@ public class ViewConfigurationFactoryProcessor {
             // class
             out.print("public final class " + simpleClassName + " implements IViewConfigurationFactory { \n\n");
 
-            // main method
+            // main switch method
             out.print("  public ViewConfiguration build(Object object) { \n");
             out.print("    switch(object.getClass().getCanonicalName()) { \n");
-            map.forEach((objectView, value) -> {
-                out.print("      case " + getCodeString(objectView) + ": \n");
-                out.print("        return this.build((" + getSimpleName(objectView) + ") object); \n");
+            map.forEach((viewType, configurationObject) -> {
+                out.print("      case " + getCodeString(viewType) + ": \n");
+                out.print("        return this.build((" + getSimpleName(viewType) + ") object); \n");
             });
             out.print("      default: \n");
             out.print("         return null; \n");
             out.print("    } \n");
             out.print("  } \n\n");
 
-            // methods
-            map.forEach((key, configurationObject) -> {
-                out.print("  public ViewConfiguration build(" + getSimpleName(key) + " value) { \n");
+            // overloading methods
+            map.forEach((viewType, configurationObject) -> {
+                out.print("  public ViewConfiguration build(" + getSimpleName(viewType) + " value) { \n");
                 out.print("    if (value == null) { \n");
                 out.print("      return null; \n");
                 out.print("    } \n");
-                out.print("    " + getIdCodeString(configurationObject.id) + " \n");
-                out.print("    ViewConfiguration object = new ViewConfiguration("
-                        + getCodeParams("id", getCodeString(configurationObject.viewType), getBinderCodeString(configurationObject.binder))
-                        + "); \n");
+
+                configurationObject.printConstructorCode(out);
 
                 for (UIField uiField : configurationObject.uiFields) {
-                    uiField.printCode(out);
+                    uiField.printAddToConfigurationCode(out);
                 }
 
-                out.print("    return object; \n");
+                configurationObject.printReturnCode(out);
+
                 out.print("  } \n\n");
             });
             out.print("}");
         }
-    }
-
-    private static String getIdCodeString(String idField) {
-        if (idField != null) {
-            return "final String id = value."
-                    + idField + " != null ? value."
-                    + idField + " : String.valueOf(value.hashCode());";
-        } else {
-            return "final String id = String.valueOf(value.hashCode());";
-        }
-    }
-
-    private static String getBinderCodeString(String binderType) {
-        return binderType != null ? getCodeString(binderType) : "null";
     }
 
     private String getBinderClass(UI.BindWith annotation) {
