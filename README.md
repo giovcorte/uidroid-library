@@ -12,4 +12,4 @@ and this in your project gradle file (under repositories):
 
     maven { url 'https://jitpack.io' }
     
-For now the documentation is provided as detailed comments in the source code, but a more user friendly docu is coming! This library doesn't use any external library, so it's light weight and dependencies free.
+For now the documentation is provided as detailed comments in the source code, in the DatabindingContext and ViewConfiguration classes. A more user friendly docu is coming! This library doesn't use any external library, so it's light weight and dependencies free.
