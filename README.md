@@ -142,4 +142,37 @@ As seen, basic android views such as ImageViews, TextViews, CheckBoxes, Recycler
 Any object can be annotated to be bindable to your custom views or a base android view. For those who wants to create a view-model layer the library generates the builders for all your models, in order to make composition of view easy.
 
 After creating you views, models, and binder classes, in order to bind a object to a view you have only to call bindView() from your DatabindingContext instance.
-This instance enables also restoring views, getting a references to binders, set custom listeners to binders 
+This instance enables also restoring views, getting a references to binders, set custom listeners to binders.
+
+In order to use DatabindingContext, you have to extend it and @UI annotate:
+
+```java
+@UI()
+public class BaseDatabindingContext extends DatabindingContext {
+
+    /**
+     * Default constructor.
+     *
+     * @param imageLoader              IImageLoader instance for loading images.
+     * @param clickHandler             IClickHandler instance for handling multiple click on views.
+     * @param viewBinderFactory        IViewBinderFactory instance providing view binders.
+     * @param viewConfigurationFactory IViewConfigurationFactory instance, maps objects into configurations.
+     * @param viewCompositeFactory     IViewCompositeFactory instance for creating IViewComposites.
+     * @param viewFactory              IViewFactory instance for generating views.
+     */
+    public BaseDatabindingContext(IImageLoader imageLoader, IClickHandler clickHandler, IViewBinderFactory viewBinderFactory, IViewConfigurationFactory         viewConfigurationFactory, IViewCompositeFactory viewCompositeFactory, IViewFactory viewFactory) {
+        super(imageLoader, clickHandler, viewBinderFactory, viewConfigurationFactory, viewCompositeFactory, viewFactory);
+    }
+    
+    // customize...
+
+}
+```
+
+And to obtain an instance, if you don't want to manually create/instantiate your factories:
+```java
+DatabindingContext databindingContext = new BaseDatabindingContextProvider(this)
+                .repository(repository)                              // dependencies required by binders (examples)
+                .sharedPreferencesManager(sharedPreferencesManager)  // dependencies required by binders (examples)
+                .build();
+```
