@@ -37,7 +37,7 @@ public class TextViewElement {
 }
 ```
 
-Model class and corrspective custom view for a text with checkbox:
+Model class with corrspective custom view and binder for a text with checkbox:
 
 ```java
 @UI.ViewConfiguration(view = ItemTextCheckbox.class)
@@ -72,6 +72,51 @@ public class ItemTextCheckbox extends ConstraintLayout {
 }
 ```
 
+```java
+@UI.BinderFor(view = ItemTextCheckbox.class)
+public class ItemCheckBoxTextBinder extends SingleSelectableViewBinder<ItemTextCheckbox> {
+
+    private boolean selected;
+
+    public ItemCheckBoxTextBinder() {
+        super();
+    }
+
+    @Override
+    public void doBind(ItemTextCheckbox view, ViewConfiguration configuration, DatabindingContext databindingContext) {
+        selected = configuration.getChildConfigurationByKey("checkbox").getBooleanParam(CHECKBOX_SELECTED, false);
+        databindingContext.bindAction(view.getCheckBox(), () -> {
+            if (!selected) {
+                selected = true;
+
+                final ViewConfiguration parent = configuration.getParentConfiguration();
+                List<ViewConfiguration> children =
+                        parent.getChildrenConfigurations((key, configuration1) ->
+                                configuration1.hasChild("checkbox"));
+
+                for (ViewConfiguration child: children) {
+                    child.getChildConfigurationByKey("checkbox").putParam(CHECKBOX_SELECTED, false);
+                }
+
+                notifyItemSelected(configuration, databindingContext);
+            } else {
+                view.getCheckBox().setChecked(true);
+            }
+        });
+    }
+
+    @Override
+    public void doUnbind(ItemTextCheckbox view, ViewConfiguration configuration, DatabindingContext databindingContext) {
+
+    }
+
+    @Override
+    public void doRemove(DatabindingContext databindingContext, ViewConfiguration configuration) {
+        selected = false;
+    }
+}
+```
+
 Model class for displaying annotated objects (also different) in a list:
 
 ```java
@@ -94,4 +139,7 @@ public class RecyclerViewElement {
 ```
 
 As seen, basic android views such as ImageViews, TextViews, CheckBoxes, RecyclerViews are supported by defaults. For others base or custom views you have to build your own classes.
-Any object can be annotated to be bindable to your custom views or a base android view. For those who wants to create a view-model layer the library generates the builders for all your models, in order to make composition of view easy. 
+Any object can be annotated to be bindable to your custom views or a base android view. For those who wants to create a view-model layer the library generates the builders for all your models, in order to make composition of view easy.
+
+After creating you views, models, and binder classes, in order to bind a object to a view you have only to call bindView() from your DatabindingContext instance.
+This instance enables also restoring views, getting a references to binders, set custom listeners to binders 
