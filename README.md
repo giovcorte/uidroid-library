@@ -94,3 +94,4 @@ public class RecyclerViewElement {
 ```
 
 As seen, basic android views such as ImageViews, TextViews, CheckBoxes, RecyclerViews are supported by defaults. For others base or custom views you have to build your own classes.
+Any object can be annotated to be bindable to your custom views or a base android view. For those who wants to create a view-model layer the library generates the builders for all your models, in order to make composition of view easy. 
