@@ -171,7 +171,7 @@ public class BaseDatabindingContext extends DatabindingContext {
 
 And to obtain an instance, if you don't want to manually create/instantiate your factories:
 ```java
-DatabindingContext databindingContext = new BaseDatabindingContextProvider(this)
+DatabindingContext databindingContext = new BaseDatabindingContextProvider(context)
                 .repository(repository)                              // dependencies required by binders (examples)
                 .sharedPreferencesManager(sharedPreferencesManager)  // dependencies required by binders (examples)
                 .build();
