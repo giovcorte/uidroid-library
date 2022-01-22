@@ -48,14 +48,4 @@ public abstract class ViewBinder<V extends View> implements IViewBinder {
 
     public abstract void doRemove(DatabindingContext databindingContext, ViewConfiguration configuration);
 
-    protected void unbindViewGroup(DatabindingContext databindingContext,
-                                   ViewGroup viewGroup,
-                                   ViewConfiguration configuration,
-                                   ViewConfiguration.IViewConfigurationFilter filter) {
-        for (int i = 0; i < viewGroup.getChildCount(); i++) {
-            databindingContext.unbindView(viewGroup.getChildAt(i),
-                    configuration.getChildrenConfigurations(filter).get(i));
-        }
-    }
-
 }

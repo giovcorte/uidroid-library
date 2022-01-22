@@ -14,6 +14,7 @@ import java.util.List;
 /**
  * The only adapter needed for bind any ViewConfiguration object into an Android RecyclerView.
  */
+@SuppressWarnings("unused")
 public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericViewHolder> {
 
     private final DatabindingContext databindingContext;
@@ -60,7 +61,6 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      *
      * @param list Generic list of UI.ViewConfiguration annotated object
      */
-    @SuppressWarnings("unused")
     public void addItems(String key, List<Object> list) {
         for (Object object: list) {
             addItem(key, object);
@@ -100,8 +100,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      *
      * @param key String representing the key for the given child Configuration.
      */
-    @SuppressWarnings("unused")
-    public void removeItem(String key) {
+    public synchronized void removeItem(String key) {
         final int position = itemPositionByKey(key);
 
         if (position != -1) {
@@ -116,8 +115,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      *
      * @param position integer for the position desired.
      */
-    @SuppressWarnings("unused")
-    public void removeItem(int position) {
+    public synchronized void removeItem(int position) {
         if (position >= 0 && position < configuration.getChildrenConfigurations(filter).size()) {
             configuration.removeChildByPosition(position, filter);
 
@@ -163,7 +161,6 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      *
      * @return the current children displayed, according to the adapter filter.
      */
-    @SuppressWarnings("unused")
     public List<ViewConfiguration> getItems() {
         return configuration.getChildrenConfigurations(filter);
     }

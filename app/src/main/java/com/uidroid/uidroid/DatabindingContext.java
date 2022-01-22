@@ -180,12 +180,47 @@ public abstract class DatabindingContext {
             return;
         }
 
-        buildViewTag(view, configuration);
         buildBindingEntry(configuration);
 
-        bindViewBinder(view, configuration);
-        bindViewComposite(view, configuration);
-        bindAction(view, configuration.getAction());
+        final Queue<ViewBindingPair> queue = new LinkedList<>();
+        queue.add(new ViewBindingPair(view, configuration));
+
+        while (!queue.isEmpty()) {
+            final ViewBindingPair pair = queue.poll();
+
+            if (pair != null) {
+                final View currentView = pair.view;
+                final ViewConfiguration currentConfiguration = pair.configuration;
+
+                buildViewTag(currentView, currentConfiguration);
+
+                bindViewBinder(currentView, currentConfiguration);
+                bindAction(currentView, currentConfiguration.getAction());
+
+                final ViewComposite compositeView = buildViewComposite(currentView);
+
+                if (compositeView != null) {
+                    final List<ViewComposite.ViewCompositeChild> viewCompositeChildren = compositeView.getSubViews();
+
+                    for (ViewComposite.ViewCompositeChild compositeChild : viewCompositeChildren) {
+                        final String key = compositeChild.key;
+
+                        final View childView = compositeChild.view;
+                        final ViewConfiguration childConfiguration = currentConfiguration.getChildConfigurationByKey(key);
+
+                        if (childView != null && childConfiguration == null) {
+                            childView.setVisibility(VisibilityFallbackFactory.createVisibilityFallback(compositeChild.fallback));
+                            continue;
+                        }
+
+                        if (childView != null) {
+                            queue.add(new ViewBindingPair(childView, childConfiguration));
+                        }
+                    }
+                }
+            }
+
+        }
 
         if (!configuration.hasParent()) {
             roots.add(configuration.getId());
@@ -523,6 +558,22 @@ public abstract class DatabindingContext {
     }
 
     /**
+     * Returns the configuration associated with the provided view, if any.
+     *
+     * @param view Android view.
+     * @return ViewConfiguration view associated.
+     */
+    public ViewConfiguration getViewConfiguration(View view) {
+        final ViewTag viewTag = getViewTag(view);
+
+        if (viewTag != null) {
+            return getDatabindingEntry(viewTag.configurationId).configuration;
+        }
+
+        return null;
+    }
+
+    /**
      * Builds and loads the binding tree for the current configuration, so they will be available in
      * a synchronous way to listeners and operations.
      *
@@ -693,38 +744,6 @@ public abstract class DatabindingContext {
         } catch (RuntimeException e) {
             DatabindingLogger.log(DatabindingLogger.Level.INFO, e.getMessage());
             return null;
-        }
-    }
-
-    /**
-     * Binds each of the annotated sub-views of the specified view to the correct configuration
-     * child. The mapping is made with the annotations key parameters.
-     *
-     * @param view Android view
-     * @param configuration IViewConfiguration to bind to view
-     */
-    private void bindViewComposite(View view, ViewConfiguration configuration) {
-        if (isInvalidViewConfiguration(view, configuration)) {
-            return;
-        }
-
-        final ViewComposite compositeView = buildViewComposite(view);
-
-        if (compositeView != null) {
-            final List<ViewComposite.ViewCompositeChild> viewCompositeChildren = compositeView.getSubViews();
-
-            for (ViewComposite.ViewCompositeChild viewCompositeChild : viewCompositeChildren) {
-                final String key = viewCompositeChild.key;
-                final View childView = viewCompositeChild.view;
-
-                if (childView != null && configuration.getChildConfigurationByKey(key) == null) {
-                    childView.setVisibility(VisibilityFallbackFactory
-                            .createVisibilityFallback(viewCompositeChild.fallback));
-                    continue;
-                }
-
-                bindViewToConfiguration(childView, configuration.getChildConfigurationByKey(key));
-            }
         }
     }
 

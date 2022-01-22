@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SnapHelper;
 
-import com.uidroid.annotation.UI;
 import com.uidroid.uidroid.DatabindingContext;
 import com.uidroid.uidroid.adapter.GenericRecyclerViewAdapter;
 import com.uidroid.uidroid.model.ViewConfiguration;
@@ -123,8 +122,6 @@ public class RecyclerViewBinder<V extends RecyclerView, L extends RecyclerViewBi
 
             view.setOnScrollChangeListener(null);
         }
-
-        unbindViewGroup(databindingContext, view, configuration, filter);
     }
 
     @Override
