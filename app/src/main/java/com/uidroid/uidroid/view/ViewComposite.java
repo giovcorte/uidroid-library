@@ -12,9 +12,9 @@ public final class ViewComposite {
     private final Map<String, ViewCompositeChild> mapping = new LinkedHashMap<>();
 
     public static class ViewCompositeChild {
-        public String key;
-        public View view;
-        public int fallback;
+        private final String key;
+        private final View view;
+        private final int fallback;
 
         public ViewCompositeChild(String key, View view, int fallback) {
             this.key = key;
@@ -22,6 +22,17 @@ public final class ViewComposite {
             this.fallback = fallback;
         }
 
+        public String getKey() {
+            return key;
+        }
+
+        public View getView() {
+            return view;
+        }
+
+        public int getFallback() {
+            return fallback;
+        }
     }
 
     @SuppressWarnings("unused")

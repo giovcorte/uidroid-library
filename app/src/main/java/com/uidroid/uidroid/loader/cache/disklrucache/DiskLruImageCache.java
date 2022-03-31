@@ -3,10 +3,8 @@ package com.uidroid.uidroid.loader.cache.disklrucache;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.util.Log;
 
-import com.uidroid.uidroid.BuildConfig;
-import com.uidroid.uidroid.DatabindingLogger;
+import com.uidroid.uidroid.DataBindingLogger;
 import com.uidroid.uidroid.loader.cache.IImageCache;
 
 import java.io.BufferedInputStream;
@@ -28,7 +26,7 @@ public class DiskLruImageCache implements IImageCache {
             final File diskCacheDir = getDiskCacheDir(context, uniqueName);
             diskLruCache = DiskLruCache.open(diskCacheDir, 1, 1, diskCacheSize);
         } catch (IOException e) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot open disk cache");
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR, "Cannot open disk cache");
         }
     }
 
@@ -59,7 +57,7 @@ public class DiskLruImageCache implements IImageCache {
 
             }
 
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot write disk cache");
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR, "Cannot write disk cache");
         }
 
     }
@@ -83,7 +81,7 @@ public class DiskLruImageCache implements IImageCache {
                 bitmap = BitmapFactory.decodeStream(buffIn);
             }
         } catch (IOException e) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot read disk cache");
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR, "Cannot read disk cache");
         }
 
         return bitmap;
@@ -96,7 +94,7 @@ public class DiskLruImageCache implements IImageCache {
         try (DiskLruCache.Snapshot snapshot = diskLruCache.get(key)) {
             contained = snapshot != null;
         } catch (IOException e) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot read disk cache");
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR, "Cannot read disk cache");
         }
 
         return contained;
@@ -107,7 +105,7 @@ public class DiskLruImageCache implements IImageCache {
         try {
             diskLruCache.delete();
         } catch ( IOException e ) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR, "Cannot clear disk cache");
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR, "Cannot clear disk cache");
         }
     }
 

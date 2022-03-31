@@ -1,10 +1,9 @@
 package com.uidroid.uidroid.binder;
 
 import android.view.View;
-import android.view.ViewGroup;
 
 import com.uidroid.uidroid.DatabindingContext;
-import com.uidroid.uidroid.DatabindingLogger;
+import com.uidroid.uidroid.DataBindingLogger;
 import com.uidroid.uidroid.model.ViewConfiguration;
 
 public abstract class ViewBinder<V extends View> implements IViewBinder {
@@ -20,7 +19,7 @@ public abstract class ViewBinder<V extends View> implements IViewBinder {
             final V component = (V) view;
             doBind(component, configuration, databindingContext);
         } catch (ClassCastException e) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR,
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR,
                     "Binding failed, view cast not compatible");
         }
     }
@@ -32,7 +31,7 @@ public abstract class ViewBinder<V extends View> implements IViewBinder {
             final V component = (V) view;
             doUnbind(component, configuration, databindingContext);
         } catch (ClassCastException e) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR,
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR,
                     "Binding failed, view cast not compatible");
         }
     }

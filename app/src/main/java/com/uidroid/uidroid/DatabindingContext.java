@@ -20,7 +20,7 @@ import com.uidroid.uidroid.loader.IImageLoader;
 import com.uidroid.uidroid.model.ViewConfiguration;
 import com.uidroid.uidroid.view.ViewComposite;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -92,8 +92,6 @@ public abstract class DatabindingContext {
     private final IViewCompositeFactory viewCompositeFactory;
     private final IViewFactory viewFactory;
 
-    private final List<String> roots = Collections.synchronizedList(new LinkedList<>());
-
     private final Map<View, ViewTag> tags = new WeakHashMap<>();
     private final Map<String, DatabindingEntry> entries = new ConcurrentHashMap<>(new LinkedHashMap<>());
 
@@ -129,7 +127,7 @@ public abstract class DatabindingContext {
      */
     public void bindView(View view, Object object) {
         if (isInvalidViewConfiguration(view, object)) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR,
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR,
                     "Cannot bind null view/object");
             return;
         }
@@ -147,7 +145,7 @@ public abstract class DatabindingContext {
      */
     public void bindView(View view, Object object, String id) {
         if (isInvalidViewConfiguration(view, object) || id == null) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR,
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR,
                     "Cannot bind null view/object/id");
             return;
         }
@@ -175,55 +173,32 @@ public abstract class DatabindingContext {
      */
     public void bindViewToConfiguration(View view, ViewConfiguration configuration) {
         if (isInvalidViewConfiguration(view, configuration)) {
-            DatabindingLogger.log(DatabindingLogger.Level.ERROR,
+            DataBindingLogger.log(DataBindingLogger.Level.ERROR,
                     "Cannot bind null view and/or object");
             return;
         }
 
-        buildBindingEntry(configuration);
+        createBindingEntries(configuration);
 
-        final Queue<ViewBindingPair> queue = new LinkedList<>();
-        queue.add(new ViewBindingPair(view, configuration));
+        final Queue<BindingPair> queue = new LinkedList<>();
+        queue.add(new BindingPair(view, configuration));
 
         while (!queue.isEmpty()) {
-            final ViewBindingPair pair = queue.poll();
+            final BindingPair pair = queue.poll();
 
-            if (pair != null) {
-                final View currentView = pair.view;
-                final ViewConfiguration currentConfiguration = pair.configuration;
-
-                buildViewTag(currentView, currentConfiguration);
-
-                bindViewBinder(currentView, currentConfiguration);
-                bindAction(currentView, currentConfiguration.getAction());
-
-                final ViewComposite compositeView = buildViewComposite(currentView);
-
-                if (compositeView != null) {
-                    final List<ViewComposite.ViewCompositeChild> viewCompositeChildren = compositeView.getSubViews();
-
-                    for (ViewComposite.ViewCompositeChild compositeChild : viewCompositeChildren) {
-                        final String key = compositeChild.key;
-
-                        final View childView = compositeChild.view;
-                        final ViewConfiguration childConfiguration = currentConfiguration.getChildConfigurationByKey(key);
-
-                        if (childView != null && childConfiguration == null) {
-                            childView.setVisibility(VisibilityFallbackFactory.createVisibilityFallback(compositeChild.fallback));
-                            continue;
-                        }
-
-                        if (childView != null) {
-                            queue.add(new ViewBindingPair(childView, childConfiguration));
-                        }
-                    }
-                }
+            if (pair == null) {
+                continue;
             }
 
-        }
+            final View currentView = pair.view;
+            final ViewConfiguration currentConfiguration = pair.configuration;
 
-        if (!configuration.hasParent()) {
-            roots.add(configuration.getId());
+            createViewTag(currentView, currentConfiguration);
+
+            bindViewBinder(currentView, currentConfiguration);
+            bindAction(currentView, currentConfiguration.getAction());
+
+            queue.addAll(buildViewBindingChildren(currentView, currentConfiguration, true));
         }
     }
 
@@ -235,7 +210,7 @@ public abstract class DatabindingContext {
      */
     public void restoreView(View view, String id) {
         if (view == null || id == null) {
-            DatabindingLogger.log(DatabindingLogger.Level.INFO,
+            DataBindingLogger.log(DataBindingLogger.Level.INFO,
                     "Cannot restore a null view and/or id");
             return;
         }
@@ -259,18 +234,19 @@ public abstract class DatabindingContext {
             while (!queue.isEmpty()) {
                 final ViewConfiguration current = queue.poll();
 
-                if (current != null) {
-                    final IViewBinder binder = getDatabindingEntry(current.getId()).binder;
-
-                    if (binder != null) {
-                        binder.removeView(this, current);
-                    }
-
-                    entries.remove(current.getId());
-                    roots.remove(current.getId());
-
-                    queue.addAll(current.getChildrenConfigurations());
+                if (current == null) {
+                    continue;
                 }
+
+                final IViewBinder binder = getDatabindingEntry(current.getId()).binder;
+
+                if (binder != null) {
+                    binder.removeView(this, current);
+                }
+
+                entries.remove(current.getId());
+
+                queue.addAll(current.getChildrenConfigurations());
             }
         }
     }
@@ -283,7 +259,7 @@ public abstract class DatabindingContext {
      */
     public void unbindView(View view) {
         if (view == null) {
-            DatabindingLogger.log(DatabindingLogger.Level.INFO, "Cannot unbind null view");
+            DataBindingLogger.log(DataBindingLogger.Level.INFO, "Cannot unbind null view");
             return;
         }
 
@@ -304,7 +280,7 @@ public abstract class DatabindingContext {
      */
     public void unbindView(View view, ViewConfiguration configuration) {
         if (isInvalidViewConfiguration(view, configuration)) {
-            DatabindingLogger.log(DatabindingLogger.Level.INFO, "Cannot unbind null objects");
+            DataBindingLogger.log(DataBindingLogger.Level.INFO, "Cannot unbind null objects");
             return;
         }
 
@@ -324,75 +300,104 @@ public abstract class DatabindingContext {
             return;
         }
 
-        final Queue<ViewBindingPair> queue = new LinkedList<>();
-        queue.add(new ViewBindingPair(view, configuration));
+        final Queue<BindingPair> queue = new LinkedList<>();
+        queue.add(new BindingPair(view, configuration));
 
         while (!queue.isEmpty()) {
-            final ViewBindingPair binding = queue.poll();
+            final BindingPair pair = queue.poll();
 
-            if (binding != null) {
-                final ViewTag tag = getViewTag(binding.view);
-                final IViewBinder binder = getDatabindingEntry(binding.configuration.getId()).binder;
+            if (pair == null) {
+                continue;
+            }
 
-                if (binder != null) {
-                    binder.unbindView(this, binding.configuration, binding.view);
-                }
+            final View currentView = pair.view;
+            final ViewConfiguration currentConfiguration = pair.configuration;
 
-                if (tag != null) {
-                    clickHandler.unsubscribeActions(tag.uuid);
-                }
+            unbindViewBinder(currentView, currentConfiguration);
+            unbindAction(view);
 
-                if (remove) {
-                    entries.remove(binding.configuration.getId());
-                    tags.remove(binding.view);
-                }
+            if (remove) {
+                entries.remove(currentConfiguration.getId());
+                tags.remove(currentView);
+            }
 
-                // Unbinding viewComposite views
-                final ViewComposite viewComposite = buildViewComposite(binding.view);
-                final ViewConfiguration viewConfiguration = binding.configuration;
+            // Unbinding viewComposite and viewGroup children views
+            queue.addAll(buildViewBindingChildren(currentView, currentConfiguration, false));
+            queue.addAll(buildViewGroupBindingChildren(currentView, currentConfiguration));
+        }
+    }
 
-                if (viewComposite != null) {
-                    for (ViewConfiguration childConfiguration : viewConfiguration.getChildrenConfigurations()) {
-                        final ViewComposite.ViewCompositeChild viewCompositeChild =
-                                viewComposite.getSubView(childConfiguration.getKey());
+    /**
+     * Builds the list of the binding pairs based on the ViewGroup and configuration: we cannot get
+     * a ViewComposite from a ViewGroup, where children are dynamically added.
+     *
+     * @param view Android View, the parent of the searched child views.
+     * @param configuration ViewConfiguration with his children.
+     * @return list of binding pairs.
+     */
+    private List<BindingPair> buildViewGroupBindingChildren(View view, ViewConfiguration configuration) {
+        final List<BindingPair> subChildrenViews = new ArrayList<>();
 
-                        if (viewCompositeChild != null && viewCompositeChild.view != null) {
-                            queue.add(new ViewBindingPair(viewCompositeChild.view, childConfiguration));
-                        }
-                    }
-                }
+        if (view instanceof ViewGroup) {
+            final ViewGroup viewGroup = (ViewGroup) view;
 
-                // Unbinding children that cannot be caught from viewComposite
-                if (binding.view instanceof ViewGroup) {
-                    final ViewGroup viewGroup = (ViewGroup) binding.view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                final View childView = viewGroup.getChildAt(i);
+                final ViewTag childTag = getViewTag(childView);
 
-                    for (int i = 0; i < viewGroup.getChildCount(); i++) {
-                        final View childView = viewGroup.getChildAt(i);
-                        final ViewTag childTag = getViewTag(childView);
+                if (childTag != null) {
+                    final ViewConfiguration childConfiguration =
+                            configuration.getChildConfigurationById(childTag.configurationId);
 
-                        if (childTag != null) {
-                            final ViewConfiguration childConfiguration =
-                                    viewConfiguration.getChildConfigurationById(childTag.configurationId);
-
-                            if (childView != null && childConfiguration != null) {
-                                queue.add(new ViewBindingPair(childView, childConfiguration));
-                            }
-                        }
+                    if (childView != null && childConfiguration != null) {
+                        subChildrenViews.add(new BindingPair(childView, childConfiguration));
                     }
                 }
             }
         }
+
+        return subChildrenViews;
+    }
+
+    /**
+     * Builds the list of the binding pairs based on the view and configuration.
+     *
+     * @param view Android View, the parent of the searched subviews.
+     * @param configuration ViewConfiguration with his children.
+     * @return list of binding pairs.
+     */
+    private List<BindingPair> buildViewBindingChildren(View view, ViewConfiguration configuration, boolean isBinding) {
+        final List<BindingPair> subChildrenViews = new ArrayList<>();
+
+        final ViewComposite compositeView = buildViewComposite(view);
+
+        if (compositeView != null) {
+            for (ViewComposite.ViewCompositeChild subView : compositeView.getSubViews()) {
+                final ViewConfiguration childConfiguration = configuration.getChildConfigurationByKey(subView.getKey());
+
+                if (subView.getView() != null && childConfiguration == null && isBinding) {
+                    subView.getView().setVisibility(VisibilityFallbackFactory.createVisibilityFallback(subView.getFallback()));
+                    continue;
+                }
+
+                if (subView.getView() != null) {
+                    subChildrenViews.add(new BindingPair(subView.getView(), childConfiguration));
+                }
+            }
+        }
+
+        return subChildrenViews;
     }
 
     /**
      * Class representing a pair consisting of an Android view and his ViewConfiguration data.
      */
-    private static final class ViewBindingPair {
+    private static final class BindingPair {
 
         private final View view;
         private final ViewConfiguration configuration;
 
-        private ViewBindingPair(View view, ViewConfiguration configuration) {
+        private BindingPair(View view, ViewConfiguration configuration) {
             this.view = view;
             this.configuration = configuration;
         }
@@ -482,42 +487,13 @@ public abstract class DatabindingContext {
     }
 
     /**
-     * Returns last ViewConfiguration binded object.
-     *
-     * @return ViewConfiguration object.
-     */
-    public ViewConfiguration getLastRootViewConfiguration() {
-        if (roots.isEmpty()) {
-            return null;
-        }
-
-        final DatabindingEntry entry = entries.get(roots.get(roots.size() - 1));
-
-        if (entry != null) {
-            return entry.configuration;
-        }
-
-        return null;
-    }
-
-    /**
-     * Returns in chronological order the current binded or un-binded but active root
-     * ViewConfigurations ids.
-     *
-     * @return List of String ids.
-     */
-    public List<String> getRootViewConfigurationsHistory() {
-        return roots;
-    }
-
-    /**
      * Subscribes a generic listener to the binding defined by the id.
      *
      * @param listener Object
      * @param id String
      */
     @SuppressWarnings("unchecked")
-    public synchronized <T> void subscribeListenerToBinding(T listener, String id) {
+    public synchronized <T> void subscribeListenerToBinder(T listener, String id) {
         ListenerViewBinder<View, T> binder = getViewBinderById(id, ListenerViewBinder.class);
 
         if (binder != null) {
@@ -531,7 +507,7 @@ public abstract class DatabindingContext {
      * @param id String id of binding.
      */
     @SuppressWarnings("unchecked")
-    public synchronized  <T> void unsubscribeListenerFromBinding(String id) {
+    public synchronized  <T> void unsubscribeListenerFromBinder(String id) {
         ListenerViewBinder<View, T> binder = getViewBinderById(id, ListenerViewBinder.class);
 
         if (binder != null) {
@@ -579,7 +555,7 @@ public abstract class DatabindingContext {
      *
      * @param configuration IViewConfiguration from which starting to build the tree bindings.
      */
-    private void buildBindingEntry(ViewConfiguration configuration) {
+    private void createBindingEntries(ViewConfiguration configuration) {
         if (configuration.hasParent()) {
             return;
         }
@@ -663,7 +639,7 @@ public abstract class DatabindingContext {
      * @param view Android view to be tagged.
      * @param configuration IViewConfiguration correlate to the view.
      */
-    private ViewTag buildViewTag(View view, ViewConfiguration configuration) {
+    private ViewTag createViewTag(View view, ViewConfiguration configuration) {
         ViewTag tag = getViewTag(view);
 
         if (tag == null) {
@@ -733,6 +709,20 @@ public abstract class DatabindingContext {
     }
 
     /**
+     * Unbinds a view with his IViewBinder if is present into the loaded binders map.
+     *
+     * @param view Android view.
+     * @param configuration IViewConfiguration configuration.
+     */
+    private void unbindViewBinder(View view, ViewConfiguration configuration) {
+        final IViewBinder binder = getDatabindingEntry(configuration.getId()).binder;
+
+        if (binder != null) {
+            binder.unbindView(this, configuration, view);
+        }
+    }
+
+    /**
      * Creates and returns the correct IViewBinder for the provided IViewConfiguration, if any.
      *
      * @param configuration IViewConfiguration from which creates the binder.
@@ -742,7 +732,7 @@ public abstract class DatabindingContext {
         try {
             return viewBinderFactory.build(getBinderType(configuration));
         } catch (RuntimeException e) {
-            DatabindingLogger.log(DatabindingLogger.Level.INFO, e.getMessage());
+            DataBindingLogger.log(DataBindingLogger.Level.INFO, e.getMessage());
             return null;
         }
     }
@@ -758,7 +748,7 @@ public abstract class DatabindingContext {
         ViewTag tag = getViewTag(view);
 
         if (tag == null) {
-            tag = buildViewTag(view, null);
+            tag = createViewTag(view, null);
         }
 
         if (action != null) {
@@ -766,6 +756,19 @@ public abstract class DatabindingContext {
 
             final ViewTag finalTag = tag;
             view.setOnClickListener(v -> clickHandler.executeActions(finalTag.uuid));
+        }
+    }
+
+    /**
+     * Unbinds from the provided view all the actions associated.
+     *
+     * @param view Android view where set the listener.
+     */
+    public void unbindAction(View view) {
+        final ViewTag tag = getViewTag(view);
+
+        if (tag != null) {
+            clickHandler.unsubscribeActions(tag.uuid);
         }
     }
 
@@ -849,8 +852,6 @@ public abstract class DatabindingContext {
         public final Integer uuid;
         public String configurationId;
 
-        public Object data;
-
         public ViewTag(Integer uuid) {
             this.uuid = uuid;
         }
@@ -858,12 +859,6 @@ public abstract class DatabindingContext {
         public ViewTag(Integer uuid, String configurationId) {
             this.uuid = uuid;
             this.configurationId = configurationId;
-        }
-
-        public ViewTag(Integer uuid, String configurationId, Object data) {
-            this.uuid = uuid;
-            this.configurationId = configurationId;
-            this.data = data;
         }
 
     }

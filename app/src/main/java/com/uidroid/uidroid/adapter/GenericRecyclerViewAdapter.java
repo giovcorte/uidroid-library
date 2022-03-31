@@ -17,6 +17,11 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericViewHolder> {
 
+    private final static String GENERIC_BINDER_TYPE = "generic-binder-type";
+    private final static String GENERIC_VIEW_TYPE = "generic-binder-type";
+
+    private final static String NO_KEY = "no-key";
+
     private final DatabindingContext databindingContext;
     private final ViewConfiguration configuration;
 
@@ -27,6 +32,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      *
      * @param databindingContext DatabindingContext.
      * @param configuration IViewConfiguration
+     * @param filter ViewConfiguration.IViewConfigurationFilter filter to select what data display.
      */
     public GenericRecyclerViewAdapter(DatabindingContext databindingContext,
                                       ViewConfiguration configuration,
@@ -34,6 +40,35 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
         this.databindingContext = databindingContext;
         this.configuration = configuration;
         this.filter = filter;
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param databindingContext DatabindingContext.
+     * @param configuration IViewConfiguration
+     */
+    public GenericRecyclerViewAdapter(DatabindingContext databindingContext,
+                                      ViewConfiguration configuration) {
+        this.databindingContext = databindingContext;
+        this.configuration = configuration;
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param databindingContext DatabindingContext.
+     * @param objects list of @UI.ViewConfiguration annotated objects.
+     */
+    public GenericRecyclerViewAdapter(DatabindingContext databindingContext,
+                                      List<Object> objects) {
+        this.databindingContext = databindingContext;
+        this.configuration = new ViewConfiguration(buildViewConfigurationIdFromList(objects),
+                GENERIC_VIEW_TYPE, GENERIC_BINDER_TYPE);
+        for (Object object: objects) {
+            this.configuration.addChildConfiguration(NO_KEY,
+                    this.databindingContext.buildViewConfigurationForObject(object));
+        }
     }
 
     @NonNull
@@ -183,6 +218,26 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
     public void setFilter(ViewConfiguration.IViewConfigurationFilter filter) {
         this.filter = filter;
         notifyItemRangeChanged(0, configuration.getChildrenConfigurations(filter).size());
+    }
+
+    /**
+     * Clears all the children and stops the tasks in each binder.
+     */
+    public void clearItems() {
+        for (ViewConfiguration configuration: this.configuration.getChildrenConfigurations()) {
+            this.databindingContext.removeView(configuration.getId());
+        }
+        this.configuration.getChildrenConfigurations().clear();
+    }
+
+    /**
+     * Builds a random id for a list of objects, based on the list's hashCode.
+     *
+     * @param objects List of generic Object type items.
+     * @return String hashCode of the sudden list.
+     */
+    private String buildViewConfigurationIdFromList(List<Object> objects) {
+        return String.valueOf(objects.hashCode());
     }
 
 }

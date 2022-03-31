@@ -10,7 +10,7 @@ import android.util.Log;
  * The error level notifies exceptions that lead to inconsistencies in your ui, such as incompatible
  * casts at binding time or a view which cannot be generated.
  */
-public final class DatabindingLogger {
+public final class DataBindingLogger {
 
     public enum Level {
         NONE,
@@ -36,19 +36,19 @@ public final class DatabindingLogger {
     private static Level level = Level.INFO;
 
     public static void log(Level level, String message) {
-        if (DatabindingLogger.level == Level.NONE) {
+        if (DataBindingLogger.level == Level.NONE) {
             return;
         }
 
-        if (DatabindingLogger.level.value() >= level.value()
-                && DatabindingLogger.level.value() > 0) {
+        if (DataBindingLogger.level.value() >= level.value()
+                && DataBindingLogger.level.value() > 0) {
             Log.d(DatabindingContext.DATABINDING_CONTEXT_TAG, message);
         }
     }
 
     @SuppressWarnings("unused")
     public static void setLevel(Level level) {
-        DatabindingLogger.level = level;
+        DataBindingLogger.level = level;
     }
 
 }
