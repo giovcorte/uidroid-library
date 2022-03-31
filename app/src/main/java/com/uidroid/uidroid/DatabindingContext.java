@@ -567,7 +567,9 @@ public abstract class DatabindingContext {
             final ViewConfiguration current = configurations.poll();
 
             if (current != null && !entries.containsKey(current.getId())) {
-                createDatabindingEntry(current);
+                final IViewBinder binder = buildBinderForConfiguration(configuration);
+
+                entries.put(configuration.getId(), new DatabindingEntry(configuration, binder));
             }
 
             if (current != null) {
@@ -590,18 +592,6 @@ public abstract class DatabindingContext {
         }
 
         return configuration.getViewType();
-    }
-
-    /**
-     * Creates a databinding entry object representing the binding between the configuration and his
-     * view in this context.
-     *
-     * @param configuration IViewConfiguration.
-     */
-    private void createDatabindingEntry(ViewConfiguration configuration) {
-        final IViewBinder binder = buildBinderForConfiguration(configuration);
-
-        entries.put(configuration.getId(), new DatabindingEntry(configuration, binder));
     }
 
     /**
@@ -698,7 +688,7 @@ public abstract class DatabindingContext {
      */
     private void bindViewBinder(View view, ViewConfiguration configuration) {
         if (!hasDatabindingEntry(configuration.getId())) {
-            createDatabindingEntry(configuration);
+            createBindingEntries(configuration);
         }
 
         final IViewBinder binder = getDatabindingEntry(configuration.getId()).binder;
