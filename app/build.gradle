@@ -10,7 +10,7 @@ android {
         minSdk 24
         targetSdk 31
         versionCode 1
-        versionName "2.0.1"
+        versionName "2.0.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -28,6 +28,9 @@ android {
 }
 
 dependencies {
+    //compileOnly project(':annotation')
+    //annotationProcessor project(':processor')
+    //implementation project(':processor')
     //noinspection GradleDependency
     implementation 'androidx.appcompat:appcompat:1.2.0'
     //noinspection GradleDependency
