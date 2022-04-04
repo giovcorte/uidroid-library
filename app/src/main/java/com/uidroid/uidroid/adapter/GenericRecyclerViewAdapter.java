@@ -1,14 +1,16 @@
 package com.uidroid.uidroid.adapter;
 
-import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.uidroid.uidroid.DatabindingContext;
-import com.uidroid.uidroid.model.ViewConfiguration;
+import com.uidroid.uidroid.IAdapterDataBinding;
+import com.uidroid.uidroid.IData;
+import com.uidroid.uidroid.IView;
+import com.uidroid.uidroid.IViewFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,132 +19,68 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericViewHolder> {
 
-    private final static String GENERIC_BINDER_TYPE = "generic-binder-type";
-    private final static String GENERIC_VIEW_TYPE = "generic-binder-type";
-
-    private final static String NO_KEY = "no-key";
-
-    private final DatabindingContext databindingContext;
-    private final ViewConfiguration configuration;
-
-    private ViewConfiguration.IViewConfigurationFilter filter;
+    private final IAdapterDataBinding dataBinding;
+    private final IViewFactory viewFactory;
+    
+    private final List<IData> items;
 
     /**
      * Constructor.
      *
-     * @param databindingContext DatabindingContext.
-     * @param configuration IViewConfiguration
-     * @param filter ViewConfiguration.IViewConfigurationFilter filter to select what data display.
+     * @param dataBinding IAdapterDataBinding dataBinding.
+     * @param items List of IData objects.
      */
-    public GenericRecyclerViewAdapter(DatabindingContext databindingContext,
-                                      ViewConfiguration configuration,
-                                      ViewConfiguration.IViewConfigurationFilter filter) {
-        this.databindingContext = databindingContext;
-        this.configuration = configuration;
-        this.filter = filter;
+    public GenericRecyclerViewAdapter(IAdapterDataBinding dataBinding,
+                                      IViewFactory viewFactory,
+                                      List<IData> items) {
+        this.dataBinding = dataBinding;
+        this.viewFactory = viewFactory;
+        this.items = items;
     }
 
     /**
      * Constructor.
      *
-     * @param databindingContext DatabindingContext.
-     * @param configuration IViewConfiguration
+     * @param dataBinding IAdapterDataBinding dataBinding.
      */
-    public GenericRecyclerViewAdapter(DatabindingContext databindingContext,
-                                      ViewConfiguration configuration) {
-        this.databindingContext = databindingContext;
-        this.configuration = configuration;
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param databindingContext DatabindingContext.
-     * @param objects list of @UI.ViewConfiguration annotated objects.
-     */
-    public GenericRecyclerViewAdapter(DatabindingContext databindingContext,
-                                      List<Object> objects) {
-        this.databindingContext = databindingContext;
-        this.configuration = new ViewConfiguration(buildViewConfigurationIdFromList(objects),
-                GENERIC_VIEW_TYPE, GENERIC_BINDER_TYPE);
-        for (Object object: objects) {
-            this.configuration.addChildConfiguration(NO_KEY,
-                    this.databindingContext.buildViewConfigurationForObject(object));
-        }
+    public GenericRecyclerViewAdapter(IAdapterDataBinding dataBinding,
+                                      IViewFactory viewFactory) {
+        this.dataBinding = dataBinding;
+        this.viewFactory = viewFactory;
+        this.items = new ArrayList<>();
     }
 
     @NonNull
     @Override
     public GenericViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        final ViewConfiguration holderConfiguration = configuration.getChildrenConfigurations(filter).get(viewType);
-        final View view = databindingContext.buildView(parent.getContext(), holderConfiguration.getViewType());
+        final IData data = items.get(viewType);
+        final IView view = viewFactory.build(data);
 
-        return new GenericViewHolder(view, holderConfiguration);
+        return new GenericViewHolder(view, data);
     }
 
     @Override
     public void onBindViewHolder(@NonNull GenericViewHolder holder, int position) {
-        databindingContext.bindViewToConfiguration(holder.itemView, holder.model);
-    }
-
-    @Override
-    public void onViewRecycled(@NonNull GenericViewHolder holder) {
-        databindingContext.unbindView(holder.itemView, holder.model);
-        super.onViewRecycled(holder);
+        dataBinding.bind(holder.view, holder.data);
     }
 
     /**
      * Adds a list of UI.ViewConfiguration annotated object to the current recycler view.
      *
-     * @param list Generic list of UI.ViewConfiguration annotated object
+     * @param newItems Generic list of IData objects
      */
-    public void addItems(String key, List<Object> list) {
-        for (Object object: list) {
-            addItem(key, object);
-        }
-    }
-
-    /**
-     * Appends a new child IViewConfiguration to the root configuration and displays it, if the key
-     * is admissible by the adapter filter
-     *
-     * @param key String representing the key for the given child Configuration.
-     * @param childConfiguration IViewConfiguration representing the new item for the list.
-     */
-    public void addItem(String key, ViewConfiguration childConfiguration) {
-        configuration.addChildConfiguration(key, childConfiguration);
-        databindingContext.runOnUIThread(() ->
-                notifyItemInserted(configuration.getChildrenConfigurations(filter).size()));
+    public void addItems(List<IData> newItems) {
+        items.addAll(newItems);
     }
 
     /**
      * Appends a new child to the root configuration and displays it, if the key
      * is admissible by the adapter filter.
      *
-     * @param key String representing the key for the given child Configuration.
-     * @param object Generic UI.ViewConfiguration annotated object.
+     * @param data new IData object.
      */
-    public void addItem(String key, Object object) {
-        ViewConfiguration configuration = databindingContext.buildViewConfigurationForObject(object);
-
-        if (configuration != null) {
-            addItem(key, configuration);
-        }
-    }
-
-    /**
-     * Remove the item for the given key, if multiple match are found, removes the first only.
-     *
-     * @param key String representing the key for the given child Configuration.
-     */
-    public synchronized void removeItem(String key) {
-        final int position = itemPositionByKey(key);
-
-        if (position != -1) {
-            configuration.removeChildByFilter((key1, model) -> key1.equals(key));
-
-            notifyItemRemoved(position);
-        }
+    public void addItem(IData data) {
+        items.add(data);
     }
 
     /**
@@ -151,26 +89,25 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
      * @param position integer for the position desired.
      */
     public synchronized void removeItem(int position) {
-        if (position >= 0 && position < configuration.getChildrenConfigurations(filter).size()) {
-            configuration.removeChildByPosition(position, filter);
+        if (position >= 0 && position < items.size()) {
+            items.remove(position);
 
             notifyItemRemoved(position);
         }
     }
 
     /**
-     * Finds and returns the position of the first element which has the specified key and satisfy
-     * the provided filter.
+     * Finds and returns the position of the first element which has the specified name.
      *
-     * @param key String representing the key for the given child Configuration.
+     * @param key String representing the name for the given IData element.
      * @return integer for the position.
      */
     public int itemPositionByKey(String key) {
         int position = 0;
         boolean found = false;
 
-        for (ViewConfiguration configuration: configuration.getChildrenConfigurations(filter)) {
-            if (configuration.getKey().equals(key)) {
+        for (IData data: items) {
+            if (data.name().equals(key)) {
                 found = true;
                 break;
             }
@@ -183,7 +120,7 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
 
     @Override
     public int getItemCount() {
-        return configuration.getChildrenConfigurations(filter).size();
+        return items.size();
     }
 
     @Override
@@ -194,50 +131,48 @@ public class GenericRecyclerViewAdapter extends RecyclerView.Adapter<GenericView
     /**
      * Access to the displayed collection.
      *
-     * @return the current children displayed, according to the adapter filter.
+     * @return the current children displayed.
      */
-    public List<ViewConfiguration> getItems() {
-        return configuration.getChildrenConfigurations(filter);
+    public List<IData> getItems() {
+        return items;
     }
 
     /**
-     * Access to the IViewConfiguration at the specified index.
+     * Access to the IData at the specified index.
      *
      * @param index integer representing the position of the desired element.
-     * @return the IViewConfiguration at the given index.
+     * @return the IData at the given index.
      */
-    public ViewConfiguration getItem(int index) {
-        return configuration.getChildrenConfigurations(filter).get(index);
+    public IData getItem(int index) {
+        return items.get(index);
     }
 
     /**
-     * Sets a new filter for the children configurations and updates the RecyclerView accord.
+     * Access to the IData at the specified index.
      *
-     * @param filter ViewConfiguration.IViewConfigurationFilter filter object.
+     * @param index integer representing the position of the desired element.
+     * @param type class of the returned object.
+     * @return the T object at the given index.
      */
-    public void setFilter(ViewConfiguration.IViewConfigurationFilter filter) {
-        this.filter = filter;
-        notifyItemRangeChanged(0, configuration.getChildrenConfigurations(filter).size());
+    public <T> T getItem(int index, Class<? extends T> type) {
+        IData data = getItem(index);
+
+        if (data == null) {
+            return null;
+        }
+
+        try {
+            return type.cast(data);
+        } catch (ClassCastException e) {
+            return null;
+        }
     }
 
     /**
      * Clears all the children and stops the tasks in each binder.
      */
     public void clearItems() {
-        for (ViewConfiguration configuration: this.configuration.getChildrenConfigurations()) {
-            this.databindingContext.removeView(configuration.getId());
-        }
-        this.configuration.getChildrenConfigurations().clear();
+        items.clear();
     }
-
-    /**
-     * Builds a random id for a list of objects, based on the list's hashCode.
-     *
-     * @param objects List of generic Object type items.
-     * @return String hashCode of the sudden list.
-     */
-    private String buildViewConfigurationIdFromList(List<Object> objects) {
-        return String.valueOf(objects.hashCode());
-    }
-
+    
 }

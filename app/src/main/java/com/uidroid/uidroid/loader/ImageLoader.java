@@ -1,5 +1,9 @@
 package com.uidroid.uidroid.loader;
 
+import static com.uidroid.uidroid.Utils.isFile;
+import static com.uidroid.uidroid.Utils.isResource;
+import static com.uidroid.uidroid.Utils.isUrl;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
@@ -44,6 +48,7 @@ public final class ImageLoader implements IImageLoader {
         handler = HandlerCompat.createAsync(Looper.getMainLooper());
     }
 
+    @Override
     public void load(ImageView view, ImageRequest request) {
         if (request.getSource() == null) {
             return;
@@ -90,6 +95,7 @@ public final class ImageLoader implements IImageLoader {
         executorService.submit(worker);
     }
 
+    @Override
     public synchronized void cancel(String id) {
         final FutureTask<Void> task = tasks.get(id);
 
@@ -98,6 +104,13 @@ public final class ImageLoader implements IImageLoader {
         }
 
         tasks.remove(id);
+    }
+
+    @Override
+    public synchronized void cancelAll() {
+        for (String id: tasks.keySet()) {
+            cancel(id);
+        }
     }
 
     private Callable<Void> getWorker(ImageView view,
@@ -121,21 +134,7 @@ public final class ImageLoader implements IImageLoader {
         return null;
     }
 
-    private static boolean isUrl(String source) {
-        return Patterns.WEB_URL.matcher(source).matches();
-    }
-
-    private static boolean isFile(String source) {
-        final File file = new File(source);
-
-        return file.exists();
-    }
-
-    private static boolean isResource(String source) {
-        return Utils.isInteger(source);
-    }
-
-    @SuppressWarnings("unused")
+    @Override
     public void clearCache() {
         cache.clear();
     }

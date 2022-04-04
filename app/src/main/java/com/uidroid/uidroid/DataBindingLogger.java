@@ -12,6 +12,8 @@ import android.util.Log;
  */
 public final class DataBindingLogger {
 
+    public final static String DATABINDING_TAG = "DataBinding";
+
     public enum Level {
         NONE,
         INFO,
@@ -42,7 +44,7 @@ public final class DataBindingLogger {
 
         if (DataBindingLogger.level.value() >= level.value()
                 && DataBindingLogger.level.value() > 0) {
-            Log.d(DatabindingContext.DATABINDING_CONTEXT_TAG, message);
+            Log.d(DATABINDING_TAG, message);
         }
     }
 

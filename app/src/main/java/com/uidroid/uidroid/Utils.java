@@ -1,5 +1,12 @@
 package com.uidroid.uidroid;
 
+import android.util.Patterns;
+
+import java.io.File;
+
+/**
+ * Utilities class.
+ */
 public final class Utils {
 
     /**
@@ -38,6 +45,38 @@ public final class Utils {
         }
 
         return true;
+    }
+
+    /**
+     * Determines if a string conforms to a url pattern.
+     *
+     * @param source String maybe url.
+     * @return boolean true if String represents a url, false otherwise.
+     */
+    public static boolean isUrl(String source) {
+        return Patterns.WEB_URL.matcher(source).matches();
+    }
+
+    /**
+     * Determines if the source is a valid File path.
+     *
+     * @param source String maybe file path.
+     * @return boolean true if String represents a valid file, false otherwise.
+     */
+    public static boolean isFile(String source) {
+        final File file = new File(source);
+
+        return file.exists();
+    }
+
+    /**
+     * Determines if the source can be a drawable resource.
+     *
+     * @param source String meybe resource
+     * @return True if the source is numeral, false otherwise.
+     */
+    public static boolean isResource(String source) {
+        return isInteger(source);
     }
 
 }
