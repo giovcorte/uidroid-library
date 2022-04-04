@@ -1,24 +1,14 @@
-package com.uidroid.processor;
+package com.uidroid.processor
 
-import javax.annotation.processing.Filer;
-import javax.annotation.processing.Messager;
-import javax.tools.Diagnostic;
+import javax.annotation.processing.Filer
+import javax.annotation.processing.Messager
+import javax.tools.Diagnostic
 
-public abstract class AbstractClassWriter {
-
-    protected Filer filer;
-    protected Messager messager;
-
-    public AbstractClassWriter(Filer filer, Messager messager) {
-        this.filer = filer;
-        this.messager = messager;
-    }
-
+abstract class AbstractClassWriter(var filer: Filer, private var messager: Messager) {
     /**
      * Error method
      */
-    private void error(String message) {
-        messager.printMessage(Diagnostic.Kind.ERROR, message);
+    private fun error(message: String) {
+        messager.printMessage(Diagnostic.Kind.ERROR, message)
     }
-
 }

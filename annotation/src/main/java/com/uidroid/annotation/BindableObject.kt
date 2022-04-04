@@ -1,12 +1,7 @@
-package com.uidroid.annotation;
+package com.uidroid.annotation
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import kotlin.reflect.KClass
 
-@Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.TYPE)
-public @interface BindableObject {
-    Class<?> view();
-}
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
+annotation class BindableObject(val view: KClass<*>)

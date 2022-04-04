@@ -1,12 +1,5 @@
-package com.uidroid.annotation;
+package com.uidroid.annotation
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.TYPE)
-public @interface BindableView {
-
-}
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
+annotation class BindableView

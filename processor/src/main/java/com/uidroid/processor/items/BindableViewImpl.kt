@@ -1,38 +1,33 @@
-package com.uidroid.processor.items;
+package com.uidroid.processor.items
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*
 
 /**
  * Class which represents a @BindableView annotated android view.
  */
-public class BindableViewImpl {
-
-    public String className;
+class BindableViewImpl {
+    var className: String
 
     // Action for each object which can bind this view for this view
-    public Map<String, BindableActionImpl> actions;
+    var actions: MutableMap<String, BindableActionImpl>
 
     // maps the simple class name of object which is binding  this view to the fields which path derives from this object
-    public Map<String, List<BindableViewFieldImpl>> bindableViewFields;
-    public Map<String, List<BindableActionFieldImpl>> bindableActionFields;
+    var bindableViewFields: MutableMap<String, MutableList<BindableViewFieldImpl>>
+    var bindableActionFields: MutableMap<String, MutableList<BindableActionFieldImpl>>
+    var implementIView = false
 
-    public boolean implementIView;
-
-    public BindableViewImpl(String className) {
-        this.className = className;
-        this.bindableViewFields = new LinkedHashMap<>();
-        this.actions = new LinkedHashMap<>();
-        this.bindableActionFields = new LinkedHashMap<>();
+    constructor(className: String) {
+        this.className = className
+        bindableViewFields = LinkedHashMap()
+        actions = LinkedHashMap()
+        bindableActionFields = LinkedHashMap()
     }
 
-    public BindableViewImpl(String className, boolean implementIView) {
-        this.className = className;
-        this.bindableViewFields = new LinkedHashMap<>();
-        this.actions = new LinkedHashMap<>();
-        this.implementIView = implementIView;
-        this.bindableActionFields = new LinkedHashMap<>();
+    constructor(className: String, implementIView: Boolean) {
+        this.className = className
+        bindableViewFields = LinkedHashMap()
+        actions = LinkedHashMap()
+        this.implementIView = implementIView
+        bindableActionFields = LinkedHashMap()
     }
-
 }

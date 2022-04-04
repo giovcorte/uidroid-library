@@ -1,96 +1,93 @@
-package com.uidroid.processor;
+package com.uidroid.processor
 
-import java.util.List;
+import java.lang.StringBuilder
 
 /**
  * Utility methods
  */
-public final class Utils {
+object Utils {
 
-    public static String capitalize(String name) {
-        if (name.length() == 1) {
-            return name.toUpperCase();
-        }
-        return name.substring(0, 1).toUpperCase() + name.substring(1);
+    fun capitalize(name: String): String {
+        return if (name.length == 1) {
+            name.toUpperCase()
+        } else name.substring(0, 1).toUpperCase() + name.substring(1)
     }
 
-    public static String lower(String s) {
-        return Character.toLowerCase(s.charAt(0)) + s.substring(1);
+    @JvmStatic
+    fun lower(s: String): String {
+        return Character.toLowerCase(s[0]).toString() + s.substring(1)
     }
 
-    public static String getCodeString(String s) {
-        if (s == null) {
-            return "null";
-        }
-
-        return "\"" + s + "\"";
+    @JvmStatic
+    fun getCodeString(s: String?): String {
+        return if (s == null) {
+            "null"
+        } else "\"" + s + "\""
     }
 
-    public static String getTypedParams(List<String> constructorParameters) {
-        StringBuilder params = new StringBuilder();
-        for (int i = 0; i < constructorParameters.size(); i++) {
-            String param = constructorParameters.get(i);
-            params.append(getSimpleName(param));
-            params.append(" ");
-            params.append(lower(getSimpleName(param)));
-            if (i <= constructorParameters.size() - 2) {
-                params.append(", ");
+    @JvmStatic
+    fun getTypedParams(constructorParameters: List<String>): String {
+        val params = StringBuilder()
+        for (i in constructorParameters.indices) {
+            val param = constructorParameters[i]
+            params.append(getSimpleName(param))
+            params.append(" ")
+            params.append(lower(getSimpleName(param)))
+            if (i <= constructorParameters.size - 2) {
+                params.append(", ")
             }
         }
-        return params.toString();
+        return params.toString()
     }
 
-    public static String getParams(List<String> parameters) {
-        StringBuilder params = new StringBuilder();
-        for (int i = 0; i < parameters.size(); i++) {
-            String dependency = parameters.get(i);
-            params.append(lower(getSimpleName(dependency)));
-            if (i < parameters.size() - 1) {
-                params.append(", ");
+    @JvmStatic
+    fun getParams(parameters: List<String>): String {
+        val params = StringBuilder()
+        for (i in parameters.indices) {
+            val dependency = parameters[i]
+            params.append(lower(getSimpleName(dependency)))
+            if (i < parameters.size - 1) {
+                params.append(", ")
             }
         }
-        return params.toString();
+        return params.toString()
     }
 
-    public static String getCombinedClassName(String simpleViewClass, String simpleDataCLass) {
-        return simpleViewClass + ":" + simpleDataCLass;
+    @JvmStatic
+    fun getCombinedClassName(simpleViewClass: String, simpleDataCLass: String): String {
+        return "$simpleViewClass:$simpleDataCLass"
     }
 
-    public static String getCleanPath(String path) {
-        String result = path;
-
+    @JvmStatic
+    fun getCleanPath(path: String): String {
+        var result = path
         if (result.contains(".")) {
-            result = result.substring(result.indexOf(".") + 1);
+            result = result.substring(result.indexOf(".") + 1)
         }
-
         if (result.contains(":")) {
-            result = result.substring(0, result.indexOf(":"));
+            result = result.substring(0, result.indexOf(":"))
         }
-
-        return result;
+        return result
     }
 
-    public static String getDataClassFromPath(String path) {
-        if (path.contains(".")) {
-            return path.substring(0, path.indexOf("."));
-        }
-
-        return path;
+    @JvmStatic
+    fun getDataClassFromPath(path: String): String {
+        return if (path.contains(".")) {
+            path.substring(0, path.indexOf("."))
+        } else path
     }
 
-    public static String getTargetDataClassFromPath(String path) {
-        if (path.contains(":")) {
-            return path.substring(path.indexOf(":") + 1);
-        }
-
-        return path;
+    @JvmStatic
+    fun getTargetDataClassFromPath(path: String): String {
+        return if (path.contains(":")) {
+            path.substring(path.indexOf(":") + 1)
+        } else path
     }
 
-    public static String getSimpleName(String className) {
-        if (className.contains(".")) {
-            return className.substring(className.lastIndexOf(".") + 1);
-        }
-        return className;
+    @JvmStatic
+    fun getSimpleName(className: String): String {
+        return if (className.contains(".")) {
+            className.substring(className.lastIndexOf(".") + 1)
+        } else className
     }
-
 }
