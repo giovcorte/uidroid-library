@@ -15,4 +15,12 @@ public class ExampleModel implements IData {
     public String name() {
         return "ExampleModel";
     }
+
+    public String getText() {
+        return text;
+    }
+
+    public IViewAction getAction() {
+        return action;
+    }
 }

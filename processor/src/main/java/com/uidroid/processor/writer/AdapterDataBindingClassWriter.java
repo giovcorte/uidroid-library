@@ -1,8 +1,8 @@
 package com.uidroid.processor.writer;
 
-import static com.uidroid.processor.Utils.getCodeString;
-import static com.uidroid.processor.Utils.getCombinedClassName;
-import static com.uidroid.processor.Utils.getSimpleName;
+import static com.uidroid.processor.Utils.codeString;
+import static com.uidroid.processor.Utils.combineClassName;
+import static com.uidroid.processor.Utils.simpleName;
 
 import com.uidroid.processor.AbstractClassWriter;
 import com.uidroid.processor.items.BindableObjectImpl;
@@ -61,13 +61,13 @@ public class AdapterDataBindingClassWriter extends AbstractClassWriter {
             out.print("    switch(pair(view, data)) { \n");
 
             for (BindableObjectImpl object: bindableObjects.values()) {
-                String simpleViewName = getSimpleName(object.viewClassName);
-                String simpleDataName = getSimpleName(object.className);
+                String simpleViewName = simpleName(object.viewClassName);
+                String simpleDataName = simpleName(object.className);
 
-                String key = getCombinedClassName(simpleViewName, simpleDataName);
+                String key = combineClassName(simpleViewName, simpleDataName);
 
                 if (methods.containsKey(key)) {
-                    out.print("      case" + getCodeString(simpleViewName + simpleDataName) + ": \n");
+                    out.print("      case" + codeString(simpleViewName + simpleDataName) + ": \n");
                     out.print("        dataBinding.bind((" + simpleViewName + ") view, (" + simpleDataName + ") data); \n");
                 }
             }

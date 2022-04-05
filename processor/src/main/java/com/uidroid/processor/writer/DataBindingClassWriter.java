@@ -1,9 +1,11 @@
 package com.uidroid.processor.writer;
 
-import static com.uidroid.processor.Utils.getCombinedClassName;
+import static com.uidroid.processor.Utils.combineClassName;
+import static com.uidroid.processor.Utils.gettersPath;
 import static com.uidroid.processor.Utils.getParams;
-import static com.uidroid.processor.Utils.getSimpleName;
+import static com.uidroid.processor.Utils.simpleName;
 import static com.uidroid.processor.Utils.getTypedParams;
+import static com.uidroid.processor.Utils.getterMethod;
 import static com.uidroid.processor.Utils.lower;
 
 import com.uidroid.processor.AbstractClassWriter;
@@ -91,7 +93,7 @@ public class DataBindingClassWriter extends AbstractClassWriter {
 
             // instance variables
             for (String dependency: dependenciesImported) {
-                out.print("  private final " + getSimpleName(dependency) + " " + lower(getSimpleName(dependency) + "; \n"));
+                out.print("  private final " + simpleName(dependency) + " " + lower(simpleName(dependency) + "; \n"));
             }
             out.println();
 
@@ -100,8 +102,8 @@ public class DataBindingClassWriter extends AbstractClassWriter {
                     + getTypedParams(new ArrayList<>(dependenciesImported))
                     + ") { \n");
             for (String dependency: dependenciesImported) {
-                out.print("    this." + lower(getSimpleName(dependency)) + " = "
-                        + lower(getSimpleName(dependency) + "; \n"));
+                out.print("    this." + lower(simpleName(dependency)) + " = "
+                        + lower(simpleName(dependency) + "; \n"));
             }
             out.print("  } \n\n");
 
@@ -109,8 +111,8 @@ public class DataBindingClassWriter extends AbstractClassWriter {
             for (String viewModelPair: methods.keySet()) {
                 BindingMethodImpl method = methods.get(viewModelPair);
 
-                String simpleViewClassName = getSimpleName(method.viewClass);
-                String simpleModelClass = getSimpleName(method.dataClass);
+                String simpleViewClassName = simpleName(method.viewClass);
+                String simpleModelClass = simpleName(method.dataClass);
 
                 String enclosingClass = method.enclosingClass;
                 String methodName = method.methodName;
@@ -118,10 +120,10 @@ public class DataBindingClassWriter extends AbstractClassWriter {
                 out.print("  public void bind(" + simpleViewClassName + " view, " + simpleModelClass + " data) { \n");
 
                 if (!method.dependencies.isEmpty()) { // method with dependencies
-                    out.print("    " + getSimpleName(enclosingClass) + "." + methodName + "(view, data, "
+                    out.print("    " + simpleName(enclosingClass) + "." + methodName + "(view, data, "
                             + getParams(method.dependencies) + "); \n");
                 } else { // method with only view and data
-                    out.print("    " + getSimpleName(enclosingClass) + "." + methodName + "(view, data); \n");
+                    out.print("    " + simpleName(enclosingClass) + "." + methodName + "(view, data); \n");
                 }
 
                 // this is a custom view
@@ -145,13 +147,13 @@ public class DataBindingClassWriter extends AbstractClassWriter {
                         List<BindableViewFieldImpl> fields = viewFieldsMap.get(simpleModelClass);
 
                         for (BindableViewFieldImpl field: fields) {
-                            String simpleFieldViewClass = getSimpleName(field.fieldViewClassName);
+                            String simpleFieldViewClass = simpleName(field.fieldViewClassName);
                             String simpleFieldDataClass = field.fieldObjectClassName;
-                            String key = getCombinedClassName(simpleFieldViewClass, simpleFieldDataClass);
+                            String key = combineClassName(simpleFieldViewClass, simpleFieldDataClass);
 
                             if (methods.containsKey(key)) {
-                                out.print("    bind(view." + field.fieldName
-                                        + " , data." + field.objectPath + "); \n");
+                                out.print("    bind(view." + getterMethod(field.fieldName)
+                                        + " , data." + gettersPath(field.objectPath) + "); \n");
                             }
                         }
                     }
@@ -164,8 +166,8 @@ public class DataBindingClassWriter extends AbstractClassWriter {
                         List<BindableActionFieldImpl> fields = actionFieldsMap.get(simpleModelClass);
 
                         for (BindableActionFieldImpl field: fields) {
-                            out.print("    DataBindingHelper.bindAction(view." + field.fieldName
-                                    + " , data." + field.objectPath + "); \n");
+                            out.print("    DataBindingHelper.bindAction(view." + getterMethod(field.fieldName)
+                                    + " , data." + gettersPath(field.objectPath) + "); \n");
                         }
                     }
                 }

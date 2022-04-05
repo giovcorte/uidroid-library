@@ -1,7 +1,7 @@
 package com.uidroid.processor.writer;
 
-import static com.uidroid.processor.Utils.getCodeString;
-import static com.uidroid.processor.Utils.getSimpleName;
+import static com.uidroid.processor.Utils.codeString;
+import static com.uidroid.processor.Utils.simpleName;
 
 import com.uidroid.processor.AbstractClassWriter;
 import com.uidroid.processor.items.BindableObjectImpl;
@@ -60,8 +60,8 @@ public class IViewFactoryClassWriter extends AbstractClassWriter {
             out.print("    switch(data.name()) { \n");
             for (BindableObjectImpl data: objects.values()) {
                 if (views.containsKey(data.viewClassName) && views.get(data.viewClassName).implementIView) {
-                    out.print("      case " + getCodeString(getSimpleName(data.className)) + ": \n");
-                    out.print("        return new " + getSimpleName(data.viewClassName) + "(context); \n");
+                    out.print("      case " + codeString(simpleName(data.className)) + ": \n");
+                    out.print("        return new " + simpleName(data.viewClassName) + "(context); \n");
                 }
             }
             out.print("      default: \n");

@@ -1,9 +1,9 @@
 package com.uidroid.processor;
 
-import static com.uidroid.processor.Utils.getCleanPath;
-import static com.uidroid.processor.Utils.getCombinedClassName;
+import static com.uidroid.processor.Utils.cleanPath;
+import static com.uidroid.processor.Utils.combineClassName;
 import static com.uidroid.processor.Utils.getDataClassFromPath;
-import static com.uidroid.processor.Utils.getSimpleName;
+import static com.uidroid.processor.Utils.simpleName;
 import static com.uidroid.processor.Utils.getTargetDataClassFromPath;
 
 import com.uidroid.annotation.BindAction;
@@ -134,7 +134,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
 
             if (isValidMethod) {
                 BindingMethodImpl bindingMethod = new BindingMethodImpl(enclosingClass, methodName, viewClass, dataClass, dependencies);
-                methods.put(getCombinedClassName(getSimpleName(viewClass), getSimpleName(dataClass)), bindingMethod);
+                methods.put(combineClassName(simpleName(viewClass), simpleName(dataClass)), bindingMethod);
             }
         }
 
@@ -179,10 +179,10 @@ public class UIAnnotationProcessor extends AbstractProcessor {
                 }
 
                 String simpleDataClassForField = getDataClassFromPath(path);
-                String fieldViewSimpleClassName = getSimpleName(viewClassName);
+                String fieldViewSimpleClassName = simpleName(viewClassName);
                 String fieldObjectSimpleClassName = getTargetDataClassFromPath(path);
 
-                String viewDataPairForBindingField = getCombinedClassName(fieldViewSimpleClassName, fieldObjectSimpleClassName);
+                String viewDataPairForBindingField = combineClassName(fieldViewSimpleClassName, fieldObjectSimpleClassName);
 
                 if (!enclosingView.bindableViewFields.containsKey(simpleDataClassForField)) {
                     enclosingView.bindableViewFields.put(simpleDataClassForField, new ArrayList<>());
@@ -193,7 +193,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
                 if (methods.containsKey(viewDataPairForBindingField)) {
                     fields.add(new BindableViewFieldImpl(
                             fieldName,
-                            getCleanPath(path),
+                            cleanPath(path),
                             viewClassName,
                             fieldObjectSimpleClassName));
                 } else {
@@ -232,7 +232,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
                     }
 
                     String simpleDataClassForField = getDataClassFromPath(path);
-                    String cleanPath = getCleanPath(path);
+                    String cleanPath = cleanPath(path);
 
                     if (!enclosingView.bindableActionFields.containsKey(simpleDataClassForField)) {
                         enclosingView.bindableActionFields.put(simpleDataClassForField, new ArrayList<>());
@@ -247,7 +247,7 @@ public class UIAnnotationProcessor extends AbstractProcessor {
 
                 for (String path: item.paths()) {
                     String objectSimpleClassName = getDataClassFromPath(path);
-                    String cleanPath = getCleanPath(path);
+                    String cleanPath = cleanPath(path);
 
                     views.get(className).actions.put(objectSimpleClassName,
                             new BindableActionImpl(className, objectSimpleClassName, cleanPath));

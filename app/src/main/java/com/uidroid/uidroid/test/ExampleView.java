@@ -28,4 +28,11 @@ public class ExampleView extends View implements IView {
         return "ExampleView";
     }
 
+    public TextView getText() {
+        return text;
+    }
+
+    public ImageView getImage() {
+        return image;
+    }
 }
