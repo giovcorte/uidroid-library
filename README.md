@@ -3,10 +3,10 @@ View binding made generic and customizable for Android applications
 
 To import and use this library in yours projects, add the following statements in your app module gradle:
 
-    implementation 'com.github.giovcorte.uidroid-library:uidroid:2.0.0'
-    annotationProcessor('com.github.giovcorte.uidroid-library:processor:2.0.0')
-    implementation 'com.github.giovcorte.uidroid-library:annotation:2.0.0'
-    implementation 'com.github.giovcorte.uidroid-library:processor:2.0.0'
+    implementation 'com.github.giovcorte.uidroid-library:uidroid:2.1.0'
+    annotationProcessor('com.github.giovcorte.uidroid-library:processor:2.1.0')
+    implementation 'com.github.giovcorte.uidroid-library:annotation:2.1.0'
+    implementation 'com.github.giovcorte.uidroid-library:processor:2.1.0'
     
 and this in your project gradle file (under repositories):
 
