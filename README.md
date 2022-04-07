@@ -3,10 +3,10 @@ View binding made generic and customizable for Android applications
 
 To import and use this library in yours projects, add the following statements in your app module gradle:
 
-    implementation 'com.github.giovcorte.uidroid-library:uidroid:2.0.0'
-    annotationProcessor('com.github.giovcorte.uidroid-library:processor:2.0.0')
-    implementation 'com.github.giovcorte.uidroid-library:annotation:2.0.0'
-    implementation 'com.github.giovcorte.uidroid-library:processor:2.0.0'
+    implementation 'com.github.giovcorte.uidroid-library:uidroid:2.1.0'
+    annotationProcessor('com.github.giovcorte.uidroid-library:processor:2.1.0')
+    implementation 'com.github.giovcorte.uidroid-library:annotation:2.1.0'
+    implementation 'com.github.giovcorte.uidroid-library:processor:2.1.0'
     
 and this in your project gradle file (under repositories):
 
@@ -72,5 +72,6 @@ public static void bindText(@View TextView view, @Data String text) {
 ```
 
 To bind all yopu view tree now you only have to get a DataBinding instance and call bind(..) with your parameters, using the overloading. The library also enables to display different objects in RecyclerViews. Annotate your custom views with @BindableView, the objects to display with @BindableObject(CustomView.class), and in both implement respectively IView and IData interfaces, returning the simple class name of each. Then use GenericRecyclerViewAdapter with the AdapterDatabinding and ViewFactory generated classes.
+To enable compatibility with Kotlin, if you use this library with Java you must implement getter methods for all yur views and data model. In Kotlin these are by default availables.
 
 
