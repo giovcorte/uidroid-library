@@ -69,6 +69,7 @@ public class AdapterDataBindingClassWriter extends AbstractClassWriter {
                 if (methods.containsKey(key)) {
                     out.print("      case" + codeString(simpleViewName + simpleDataName) + ": \n");
                     out.print("        dataBinding.bind((" + simpleViewName + ") view, (" + simpleDataName + ") data); \n");
+                    out.print("        break;");
                 }
             }
             out.print("      default: \n");
